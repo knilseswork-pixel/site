@@ -230,12 +230,12 @@
       bindControls();
     }
 
-    fetch("/api/gallery-images")
+    fetch("data/gallery.json", { cache: "no-store" })
       .then(function (r) {
         return r.json();
       })
       .then(function (data) {
-        var list = data && data.ok && Array.isArray(data.images) ? data.images : [];
+        var list = Array.isArray(data) ? data : [];
         buildFromList(list);
       })
       .catch(function () {
@@ -338,20 +338,29 @@
     submitBtn.disabled = true;
     submitBtn.classList.add("is-loading");
 
+    var endpoint = (form.getAttribute("action") || "").trim();
+    if (!endpoint || endpoint.indexOf("formspree.io") === -1 || /REPLACE_WITH_YOUR_ID/.test(endpoint)) {
+      setStatus("Форма не настроена. Укажите ссылку Formspree в атрибуте action у формы.", "error");
+      submitBtn.disabled = false;
+      submitBtn.classList.remove("is-loading");
+      return;
+    }
+
     var ac = new AbortController();
     var timeoutMs = 35000;
     var timeoutId = setTimeout(function () {
       ac.abort();
     }, timeoutMs);
 
-    fetch("/api/order", {
+    var fd = new FormData(form);
+    fd.set("name", String((name || "").trim()));
+    fd.set("phone", String((phone || "").trim()));
+    fd.set("email", String((email || "").trim()));
+
+    fetch(endpoint, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        name: (name || "").trim(),
-        phone: (phone || "").trim(),
-        email: (email || "").trim(),
-      }),
+      headers: { Accept: "application/json" },
+      body: fd,
       signal: ac.signal,
     })
       .then(function (res) {
@@ -360,23 +369,23 @@
         });
       })
       .then(function (result) {
-        if (result.ok && result.data && result.data.ok) {
-          setStatus(result.data.message || "Заявка отправлена.", "success");
+        if (result.ok) {
+          setStatus("Заявка отправлена. Мы свяжемся с вами в ближайшее время.", "success");
           form.reset();
         } else {
-          var err =
-            (result.data && result.data.error) || "Не удалось отправить. Попробуйте позже.";
+          var err = "Не удалось отправить. Попробуйте позже.";
+          if (result.data) {
+            if (typeof result.data.error === "string" && result.data.error.trim()) err = result.data.error;
+            if (typeof result.data.message === "string" && result.data.message.trim()) err = result.data.message;
+          }
           setStatus(err, "error");
         }
       })
       .catch(function (err) {
         if (err && err.name === "AbortError") {
-          setStatus(
-            "Сервер не ответил вовремя (прокси, почта или сеть). Подождите и попробуйте снова или отключите неработающий SMTP в .env.",
-            "error"
-          );
+          setStatus("Не удалось отправить: превышено время ожидания. Проверьте интернет и попробуйте ещё раз.", "error");
         } else {
-          setStatus("Нет связи с сервером. Запустите сайт через node server.js или проверьте сеть.", "error");
+          setStatus("Не удалось отправить: нет связи с сервисом отправки. Проверьте интернет и попробуйте ещё раз.", "error");
         }
       })
       .finally(function () {
@@ -391,6 +400,25 @@
     var emptyEl = document.getElementById("reviews-empty");
     var form = document.getElementById("reviews-form");
     if (!listEl || !form) return;
+
+    var STORAGE_KEY = "roofSite.reviews.v1";
+
+    function readLocalReviews() {
+      try {
+        var raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) return [];
+        var arr = JSON.parse(raw);
+        return Array.isArray(arr) ? arr : [];
+      } catch (e) {
+        return [];
+      }
+    }
+
+    function writeLocalReviews(list) {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
+      } catch (e) {}
+    }
 
     function fmtDate(iso) {
       try {
@@ -467,20 +495,11 @@
       });
     }
 
-    fetch("/api/reviews")
-      .then(function (res) {
-        return res.json();
-      })
-      .then(function (data) {
-        if (data && data.ok && Array.isArray(data.reviews)) {
-          renderReviews(data.reviews);
-        } else {
-          renderReviews([]);
-        }
-      })
-      .catch(function () {
-        renderReviews([]);
-      });
+    var initial = readLocalReviews();
+    initial.sort(function (a, b) {
+      return String(b.createdAt).localeCompare(String(a.createdAt));
+    });
+    renderReviews(initial);
 
     var authorEl = document.getElementById("review-author");
     var ratingEl = document.getElementById("review-rating");
@@ -525,49 +544,25 @@
         ac.abort();
       }, 20000);
 
-      fetch("/api/reviews", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          author: author,
-          text: text,
-          rating: rating,
-        }),
-        signal: ac.signal,
-      })
-        .then(function (res) {
-          return res.json().then(function (data) {
-            return { ok: res.ok, data: data };
-          });
-        })
-        .then(function (result) {
-          if (result.ok && result.data && result.data.ok && result.data.review) {
-            setRevStatus("Спасибо! Отзыв опубликован.", "success");
-            form.reset();
-            if (emptyEl) emptyEl.setAttribute("hidden", "");
-            listEl.insertBefore(cardFromReview(result.data.review), listEl.firstChild);
-          } else {
-            var err =
-              (result.data && result.data.error) ||
-              "Не удалось сохранить отзыв. Попробуйте позже.";
-            setRevStatus(err, "error");
-          }
-        })
-        .catch(function (err) {
-          if (err && err.name === "AbortError") {
-            setRevStatus("Сервер не ответил вовремя. Попробуйте ещё раз.", "error");
-          } else {
-            setRevStatus(
-              "Нет связи с сервером. Запустите сайт через node server.js.",
-              "error"
-            );
-          }
-        })
-        .finally(function () {
-          clearTimeout(timeoutId);
-          submitBtn.disabled = false;
-          submitBtn.classList.remove("is-loading");
-        });
+      var list = readLocalReviews();
+      var item = {
+        id: Date.now().toString(36) + Math.random().toString(36).slice(2, 10),
+        author: author,
+        text: text,
+        rating: Math.round(rating),
+        createdAt: new Date().toISOString(),
+      };
+      list.unshift(item);
+      writeLocalReviews(list.slice(0, 200));
+
+      setRevStatus("Спасибо! Отзыв опубликован.", "success");
+      form.reset();
+      if (emptyEl) emptyEl.setAttribute("hidden", "");
+      listEl.insertBefore(cardFromReview(item), listEl.firstChild);
+
+      clearTimeout(timeoutId);
+      submitBtn.disabled = false;
+      submitBtn.classList.remove("is-loading");
     });
   })();
 })();
