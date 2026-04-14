@@ -338,20 +338,29 @@
     submitBtn.disabled = true;
     submitBtn.classList.add("is-loading");
 
+    var endpoint = (form.getAttribute("action") || "").trim();
+    if (!endpoint || endpoint.indexOf("formspree.io") === -1 || /REPLACE_WITH_YOUR_ID/.test(endpoint)) {
+      setStatus("Форма не настроена. Укажите ссылку Formspree в атрибуте action у формы.", "error");
+      submitBtn.disabled = false;
+      submitBtn.classList.remove("is-loading");
+      return;
+    }
+
     var ac = new AbortController();
     var timeoutMs = 35000;
     var timeoutId = setTimeout(function () {
       ac.abort();
     }, timeoutMs);
 
-    fetch("/api/order", {
+    var fd = new FormData(form);
+    fd.set("name", String((name || "").trim()));
+    fd.set("phone", String((phone || "").trim()));
+    fd.set("email", String((email || "").trim()));
+
+    fetch(endpoint, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        name: (name || "").trim(),
-        phone: (phone || "").trim(),
-        email: (email || "").trim(),
-      }),
+      headers: { Accept: "application/json" },
+      body: fd,
       signal: ac.signal,
     })
       .then(function (res) {
@@ -360,23 +369,23 @@
         });
       })
       .then(function (result) {
-        if (result.ok && result.data && result.data.ok) {
-          setStatus(result.data.message || "Заявка отправлена.", "success");
+        if (result.ok) {
+          setStatus("Заявка отправлена. Мы свяжемся с вами в ближайшее время.", "success");
           form.reset();
         } else {
-          var err =
-            (result.data && result.data.error) || "Не удалось отправить. Попробуйте позже.";
+          var err = "Не удалось отправить. Попробуйте позже.";
+          if (result.data) {
+            if (typeof result.data.error === "string" && result.data.error.trim()) err = result.data.error;
+            if (typeof result.data.message === "string" && result.data.message.trim()) err = result.data.message;
+          }
           setStatus(err, "error");
         }
       })
       .catch(function (err) {
         if (err && err.name === "AbortError") {
-          setStatus(
-            "Сервер не ответил вовремя (прокси, почта или сеть). Подождите и попробуйте снова или отключите неработающий SMTP в .env.",
-            "error"
-          );
+          setStatus("Не удалось отправить: превышено время ожидания. Проверьте интернет и попробуйте ещё раз.", "error");
         } else {
-          setStatus("Нет связи с сервером. Запустите сайт через node server.js или проверьте сеть.", "error");
+          setStatus("Не удалось отправить: нет связи с сервисом отправки. Проверьте интернет и попробуйте ещё раз.", "error");
         }
       })
       .finally(function () {

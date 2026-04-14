@@ -321,7 +321,14 @@
               <li>Можно указать удобное время звонка в комментарии позже</li>
             </ul>
           </div>
-          <form class="form reveal" data-reveal id="order-form" novalidate>
+          <form
+            class="form reveal"
+            data-reveal
+            id="order-form"
+            novalidate
+            action="https://formspree.io/f/xkokgqkw"
+            method="POST"
+          >
             <div class="form__row">
               <label class="form__label" for="name">ФИО</label>
               <input class="form__input" type="text" id="name" name="name" autocomplete="name" placeholder="Иванов Иван Иванович" required minlength="2" />
@@ -345,6 +352,7 @@
               <label class="form__label" for="email">Email</label>
               <input class="form__input" type="email" id="email" name="email" autocomplete="email" placeholder="mail@example.com" required />
             </div>
+            <input type="text" name="_gotcha" class="reviews__hp" tabindex="-1" autocomplete="off" aria-hidden="true" />
             <p class="form__status" id="form-status" role="status" aria-live="polite"></p>
             <button type="submit" class="btn btn--primary btn--block form__submit" id="form-submit">
               <span class="btn__text">Отправить заявку</span>
