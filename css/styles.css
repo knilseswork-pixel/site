@@ -114,6 +114,12 @@ a {
   text-decoration: none;
 }
 
+a:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.22);
+  border-radius: 8px;
+}
+
 img {
   max-width: 100%;
   height: auto;
@@ -605,6 +611,11 @@ body.is-nav-open {
   transition: transform 0.2s var(--ease-out), box-shadow 0.2s;
 }
 
+.btn--sm {
+  padding: 0.6rem 1.05rem;
+  font-size: 0.88rem;
+}
+
 .btn--primary {
   background: linear-gradient(135deg, var(--accent), var(--accent-dim));
   color: #fff;
@@ -1021,6 +1032,24 @@ body.is-guarantee-open {
 .card__title {
   font-size: 1.1rem;
   margin: 0 0 0.5rem;
+}
+
+.card__title a {
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 4px;
+  text-decoration-color: rgba(148, 163, 184, 0.35);
+  transition: text-decoration-color 0.2s, color 0.2s;
+}
+
+.card__title a:hover {
+  text-decoration-color: rgba(249, 115, 22, 0.85);
+  color: var(--text);
+}
+
+.card__more {
+  margin-top: 1rem;
+  align-self: flex-start;
 }
 
 .card__text {
