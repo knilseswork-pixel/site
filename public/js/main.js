@@ -105,6 +105,93 @@
     });
   }
 
+  (function initGuaranteePopover() {
+    var trigger = document.getElementById("guarantee-trigger");
+    var popover = document.getElementById("guarantee-popover");
+    if (!trigger || !popover) return;
+
+    var closeBtn = popover.querySelector("[data-guarantee-close]");
+    var hoverCapable =
+      typeof window.matchMedia === "function" && window.matchMedia("(hover: hover) and (pointer: fine)").matches;
+    var hoverCloseTimer = null;
+
+    function isOpen() {
+      return !popover.hasAttribute("hidden");
+    }
+
+    function setOpen(open) {
+      if (open) {
+        popover.removeAttribute("hidden");
+        popover.setAttribute("aria-hidden", "false");
+        trigger.setAttribute("aria-expanded", "true");
+      } else {
+        popover.setAttribute("hidden", "");
+        popover.setAttribute("aria-hidden", "true");
+        trigger.setAttribute("aria-expanded", "false");
+      }
+    }
+
+    function cancelHoverClose() {
+      if (hoverCloseTimer != null) {
+        clearTimeout(hoverCloseTimer);
+        hoverCloseTimer = null;
+      }
+    }
+
+    function scheduleHoverClose() {
+      cancelHoverClose();
+      hoverCloseTimer = setTimeout(function () {
+        setOpen(false);
+      }, 140);
+    }
+
+    trigger.addEventListener("click", function (e) {
+      e.preventDefault();
+      e.stopPropagation();
+      cancelHoverClose();
+      setOpen(!isOpen());
+    });
+
+    if (closeBtn) {
+      closeBtn.addEventListener("click", function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        setOpen(false);
+        trigger.focus();
+      });
+    }
+
+    document.addEventListener("click", function (e) {
+      if (!isOpen()) return;
+      var t = e.target;
+      if (t && (trigger.contains(t) || popover.contains(t))) return;
+      setOpen(false);
+    });
+
+    document.addEventListener("keydown", function (e) {
+      if (e.key !== "Escape") return;
+      if (!isOpen()) return;
+      setOpen(false);
+      trigger.focus();
+    });
+
+    if (hoverCapable) {
+      trigger.addEventListener("pointerenter", function () {
+        cancelHoverClose();
+        setOpen(true);
+      });
+      trigger.addEventListener("pointerleave", function () {
+        scheduleHoverClose();
+      });
+      popover.addEventListener("pointerenter", function () {
+        cancelHoverClose();
+      });
+      popover.addEventListener("pointerleave", function () {
+        scheduleHoverClose();
+      });
+    }
+  })();
+
   function isGalleryPhotoFilename(name) {
     if (!name || typeof name !== "string") return false;
     if (!/\.(jpe?g|png|gif|webp)$/i.test(name)) return false;
@@ -409,25 +496,8 @@
     var emptyEl = document.getElementById("reviews-empty");
     var form = document.getElementById("reviews-form");
     if (!listEl || !form) return;
-
-    var STORAGE_KEY = "roofSite.reviews.v1";
-
-    function readLocalReviews() {
-      try {
-        var raw = localStorage.getItem(STORAGE_KEY);
-        if (!raw) return [];
-        var arr = JSON.parse(raw);
-        return Array.isArray(arr) ? arr : [];
-      } catch (e) {
-        return [];
-      }
-    }
-
-    function writeLocalReviews(list) {
-      try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
-      } catch (e) {}
-    }
+    var REVIEWS_API_URL =
+      "https://script.google.com/macros/s/AKfycbyyulW5iWoH1t97h21GUF5SaPALD8D_9i4C8k9tdmIqC19tRGvSdZGtnpUH3eNZGAM/exec";
 
     function fmtDate(iso) {
       try {
@@ -504,11 +574,26 @@
       });
     }
 
-    var initial = readLocalReviews();
-    initial.sort(function (a, b) {
-      return String(b.createdAt).localeCompare(String(a.createdAt));
-    });
-    renderReviews(initial);
+    fetch(REVIEWS_API_URL, { method: "GET", headers: { Accept: "application/json" }, cache: "no-store" })
+      .then(function (res) {
+        return res.json().then(function (data) {
+          return { ok: res.ok, data: data };
+        });
+      })
+      .then(function (result) {
+        var list =
+          result &&
+          result.ok &&
+          result.data &&
+          result.data.ok &&
+          Array.isArray(result.data.reviews)
+            ? result.data.reviews
+            : [];
+        renderReviews(list);
+      })
+      .catch(function () {
+        renderReviews([]);
+      });
 
     var authorEl = document.getElementById("review-author");
     var ratingEl = document.getElementById("review-rating");
@@ -553,25 +638,42 @@
         ac.abort();
       }, 20000);
 
-      var list = readLocalReviews();
-      var item = {
-        id: Date.now().toString(36) + Math.random().toString(36).slice(2, 10),
-        author: author,
-        text: text,
-        rating: Math.round(rating),
-        createdAt: new Date().toISOString(),
-      };
-      list.unshift(item);
-      writeLocalReviews(list.slice(0, 200));
-
-      setRevStatus("Спасибо! Отзыв опубликован.", "success");
-      form.reset();
-      if (emptyEl) emptyEl.setAttribute("hidden", "");
-      listEl.insertBefore(cardFromReview(item), listEl.firstChild);
-
-      clearTimeout(timeoutId);
-      submitBtn.disabled = false;
-      submitBtn.classList.remove("is-loading");
+      fetch(REVIEWS_API_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Accept: "application/json" },
+        body: JSON.stringify({ author: author, text: text, rating: rating }),
+        signal: ac.signal,
+      })
+        .then(function (res) {
+          return res.json().then(function (data) {
+            return { ok: res.ok, data: data };
+          });
+        })
+        .then(function (result) {
+          if (result && result.ok && result.data && result.data.ok && result.data.review) {
+            setRevStatus("Спасибо! Отзыв опубликован.", "success");
+            form.reset();
+            if (emptyEl) emptyEl.setAttribute("hidden", "");
+            listEl.insertBefore(cardFromReview(result.data.review), listEl.firstChild);
+          } else {
+            var err =
+              (result && result.data && (result.data.error || result.data.message)) ||
+              "Не удалось сохранить отзыв. Попробуйте позже.";
+            setRevStatus(String(err || "Не удалось сохранить отзыв."), "error");
+          }
+        })
+        .catch(function (err) {
+          if (err && err.name === "AbortError") {
+            setRevStatus("Сервис отзывов не ответил вовремя. Попробуйте ещё раз.", "error");
+          } else {
+            setRevStatus("Не удалось сохранить отзыв. Проверьте интернет и попробуйте ещё раз.", "error");
+          }
+        })
+        .finally(function () {
+          clearTimeout(timeoutId);
+          submitBtn.disabled = false;
+          submitBtn.classList.remove("is-loading");
+        });
     });
   })();
 })();
