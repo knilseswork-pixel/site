@@ -1,0 +1,1004 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <meta name="theme-color" content="#1a1d23" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-title" content="Журнал" />
+  <!-- Пусто = API на том же хосте, что и страница (uvicorn). Для GitHub Pages: URL zrok без слэша в конце, либо один раз откройте ?api_base=https%3A%2F%2F....share.zrok.io -->
+  <meta name="journal-api-base" content="https://e6f163vn5ob0.share.zrok.io" />
+  <link rel="manifest" href="./manifest.webmanifest" />
+  <link rel="icon" href="./push-icon.png" type="image/png" sizes="192x192" />
+  <link rel="apple-touch-icon" href="./push-icon.png" />
+  <title>Журнал</title>
+  <style>
+    :root {
+      --bg: var(--tg-theme-bg-color, #1a1d23);
+      --text: var(--tg-theme-text-color, #e8eaed);
+      --hint: var(--tg-theme-hint-color, #8b919a);
+      --link: var(--tg-theme-link-color, #6ab7ff);
+      --btn: var(--tg-theme-button-color, #3390ec);
+      --btn-text: var(--tg-theme-button-text-color, #fff);
+      --secondary: var(--tg-theme-secondary-bg-color, #2a2f38);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; padding: 16px;
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg); color: var(--text); min-height: 100vh;
+    }
+    h1 { font-size: 1.15rem; font-weight: 600; margin: 0 0 4px; }
+    .sub { font-size: 0.8rem; color: var(--hint); margin-bottom: 14px; line-height: 1.45; }
+    label { display: block; font-size: 0.75rem; color: var(--hint); margin-bottom: 6px; }
+    .field { margin-bottom: 8px; }
+    .step { margin-bottom: 18px; }
+    .step.disabled { opacity: 0.45; pointer-events: none; }
+    input[type="text"] {
+      width: 100%; padding: 12px 14px; border-radius: 10px;
+      border: 1px solid transparent; background: var(--secondary); color: var(--text);
+      font-size: 1rem;
+    }
+    input:focus { outline: none; border-color: var(--link); }
+    .suggestions {
+      margin-top: 6px; max-height: 220px; overflow-y: auto;
+      border-radius: 10px; background: var(--secondary);
+      display: none;
+    }
+    .suggestions.visible { display: block; }
+    .suggestions button {
+      display: block; width: 100%; text-align: left; padding: 12px 14px;
+      border: none; border-bottom: 1px solid rgba(255,255,255,0.06);
+      background: transparent; color: var(--text); font-size: 0.92rem; cursor: pointer;
+    }
+    .suggestions button:last-child { border-bottom: none; }
+    .suggestions button:active { background: rgba(255,255,255,0.08); }
+    .pill {
+      font-size: 0.72rem; color: var(--hint); margin-top: 4px;
+    }
+    button.primary {
+      width: 100%; padding: 14px; border: none; border-radius: 12px;
+      background: var(--btn); color: var(--btn-text);
+      font-size: 1rem; font-weight: 600; cursor: pointer; margin-top: 10px;
+    }
+    button.primary:disabled { opacity: 0.45; cursor: not-allowed; }
+    button.ghost {
+      width: 100%; margin-top: 10px; padding: 10px;
+      border: 1px solid var(--hint); border-radius: 10px;
+      background: transparent; color: var(--text); font-size: 0.9rem; cursor: pointer;
+    }
+    #status { margin-top: 14px; font-size: 0.85rem; color: var(--hint); min-height: 1.2em; }
+    #status.err { color: #ff8585; }
+    #result { margin-top: 16px; padding: 14px; border-radius: 12px; background: var(--secondary); display: none; }
+    #result.visible { display: block; }
+    #result .meta { font-size: 0.8rem; color: var(--hint); margin-bottom: 12px; line-height: 1.5; }
+    .stage {
+      display: flex; align-items: center; gap: 10px;
+      padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.06);
+      font-size: 0.95rem;
+    }
+    .stage:last-child { border-bottom: none; }
+    .stage .icon { font-size: 1.1rem; width: 1.5em; }
+    .stage.ok .label { color: var(--text); }
+    .stage.partial .label { color: #e6c35c; }
+    .stage.no .label { color: var(--hint); }
+    .stage .label .subd { font-size: 0.85em; color: var(--hint); }
+    .view.hidden { display: none !important; }
+    .nav-row { display: flex; gap: 10px; margin-bottom: 12px; flex-wrap: wrap; align-items: center; }
+    .nav-row .ghost { flex: 1; margin-top: 0; min-width: 100px; }
+    .track-wrap { overflow-x: auto; margin-top: 10px; -webkit-overflow-scrolling: touch; border-radius: 12px; border: 1px solid rgba(255,255,255,0.08); }
+    .track-table { width: 100%; border-collapse: collapse; font-size: 0.78rem; min-width: 760px; }
+    .track-table th, .track-table td { padding: 8px 6px; text-align: left; border-bottom: 1px solid rgba(255,255,255,0.07); vertical-align: middle; }
+    .track-table th { color: var(--hint); font-weight: 600; white-space: nowrap; background: rgba(0,0,0,0.18); }
+    .track-table .num { text-align: center; width: 2.2rem; color: var(--hint); }
+    .track-table .dots { text-align: center; white-space: nowrap; }
+    .track-table .dots .dot {
+      display: inline-block; width: 11px; height: 11px; border-radius: 50%; margin: 0 2px; vertical-align: middle;
+      cursor: pointer; -webkit-tap-highlight-color: rgba(255,255,255,0.15);
+    }
+    .track-table .dots .dot.on { background: #35c759; }
+    .track-table .dots .dot.na {
+      background: #000;
+      box-shadow: 0 0 0 1px rgba(255,255,255,0.22);
+    }
+    .track-table .dots .dot.partial { background: #f5a623; box-shadow: 0 0 0 1px rgba(0,0,0,0.15); }
+    .track-table .dots .dot.off { background: #d94848; }
+    .track-row.urgent td:first-child { border-radius: 8px 0 0 8px; }
+    .track-row.urgent td:last-child { border-radius: 0 8px 8px 0; }
+    .track-row.urgent td { background: rgba(229, 57, 53, 0.12); box-shadow: inset 0 0 0 2px #e53935; }
+    .track-table button.urgent-btn { padding: 6px 10px; font-size: 0.72rem; border-radius: 8px; border: 1px solid var(--hint); background: var(--secondary); color: var(--text); cursor: pointer; white-space: nowrap; }
+    .track-table button.urgent-btn:active { opacity: 0.88; }
+    .track-table button.urgent-btn:disabled { opacity: 0.35; cursor: default; }
+    .track-row.completed td { background: rgba(74, 160, 90, 0.1); }
+    .track-wrap .track-row { cursor: pointer; }
+    .track-wrap .track-row > td { transition: filter 0.18s ease; }
+    .track-wrap.track-row-focus .track-row:not(.track-row-selected) > td {
+      filter: brightness(0.42);
+    }
+    .done-badge { color: #5dcf7a; font-weight: 600; font-size: 0.72rem; white-space: nowrap; }
+    .work-badge { color: var(--hint); font-size: 0.72rem; white-space: nowrap; }
+    #view-journal h1 { margin-top: 0; }
+    #trackStatus { font-size: 0.85rem; margin-top: 12px; margin-bottom: 8px; min-height: 1.2em; }
+    #trackStatus.err { color: #ff8585; }
+    .filters-block { margin-top: 8px; }
+  </style>
+</head>
+<body>
+  <div id="view-journal" class="view">
+  <h1>Невыполненные наряды</h1>
+  <p class="sub">Сверху — только невыполненные. Внизу фильтр: если ввести данные уже закрытого наряда, он появится в таблице со статусом «Готово». «Срочно» — для невыполненных; Excel не меняется.</p>
+  <p class="sub" style="margin-top:-8px">Push при «Срочно»: Android — Chrome (не встроенный браузер Telegram), HTTPS; iPhone — Safari → На экран «Домой» (iOS 16.4+). Сервер: VAPID в .env.</p>
+
+  <div class="nav-row">
+    <button type="button" class="ghost" id="btnTrackRefresh">Обновить</button>
+    <button type="button" class="ghost" id="btnPushNotify">Уведомления о срочных</button>
+    <button type="button" class="ghost" id="reset">Сброс фильтра</button>
+  </div>
+
+    <div class="track-wrap">
+      <table class="track-table" id="trackTable" aria-label="Наряды">
+        <thead id="trackThead"></thead>
+        <tbody id="trackTbody"></tbody>
+      </table>
+    </div>
+
+    <div id="trackStatus"></div>
+
+  <div class="filters-block">
+  <div class="step" id="step1">
+    <div class="field">
+      <label for="custIn">Заказчик</label>
+      <input type="text" id="custIn" autocomplete="off" placeholder="Начните вводить название" />
+      <div class="pill" id="custPill"></div>
+    </div>
+    <div class="suggestions" id="custSug"></div>
+  </div>
+
+  <div class="step" id="step2">
+    <div class="field">
+      <label for="modelIn">Марка</label>
+      <input type="text" id="modelIn" autocomplete="off" placeholder="Выберите из списка или введите текст" />
+      <div class="pill" id="modelPill"></div>
+    </div>
+    <div class="suggestions" id="modelSug"></div>
+  </div>
+
+  <div class="step" id="step3">
+    <div class="field">
+      <label for="orderIn">Наряд</label>
+      <input type="text" id="orderIn" autocomplete="off" placeholder="Номер наряда" />
+      <div class="pill" id="orderPill"></div>
+    </div>
+    <div class="suggestions" id="orderSug"></div>
+  </div>
+  </div>
+
+  </div>
+
+  <script>
+    let tg = window.Telegram && window.Telegram.WebApp;
+    if (tg) {
+      tg.ready();
+      tg.expand();
+    }
+
+    function initData() {
+      var w = window.Telegram && window.Telegram.WebApp;
+      return (w && w.initData) ? w.initData : '';
+    }
+
+    (function bootstrapJournalFromUrl() {
+      try {
+        var q = new URLSearchParams(window.location.search);
+        var k = q.get('k') || q.get('api_key');
+        var b = q.get('api_base') || q.get('api');
+        var hp = null;
+        if (window.location.hash.length > 1) {
+          hp = new URLSearchParams(window.location.hash.slice(1));
+          if (!k) {
+            var hk = hp.get('k') || hp.get('api_key');
+            if (hk) k = decodeURIComponent(hk);
+          }
+          if (!b) {
+            var hb = hp.get('api_base') || hp.get('api');
+            if (hb) b = decodeURIComponent(hb);
+          }
+        }
+        if (k) {
+          window.__JOURNAL_API_KEY__ = k;
+          sessionStorage.setItem('journal_api_key', k);
+        } else {
+          k = sessionStorage.getItem('journal_api_key');
+          if (k) window.__JOURNAL_API_KEY__ = k;
+        }
+        if (b) {
+          b = String(b).trim().replace(/\/+$/, '');
+          sessionStorage.setItem('journal_api_base', b);
+        } else {
+          b = sessionStorage.getItem('journal_api_base');
+          if (b) b = String(b).trim().replace(/\/+$/, '');
+        }
+        if (window.history && window.history.replaceState) {
+          var u = new URL(window.location.href);
+          var dirty = false;
+          if (u.searchParams.has('k') || u.searchParams.has('api_key')) {
+            u.searchParams.delete('k');
+            u.searchParams.delete('api_key');
+            dirty = true;
+          }
+          if (u.searchParams.has('api_base') || u.searchParams.has('api')) {
+            u.searchParams.delete('api_base');
+            u.searchParams.delete('api');
+            dirty = true;
+          }
+          if (hp) {
+            hp.delete('k');
+            hp.delete('api_key');
+            hp.delete('api_base');
+            hp.delete('api');
+            var rest = hp.toString();
+            var newHash = rest ? ('#' + rest) : '';
+            if (newHash !== (u.hash || '')) {
+              u.hash = newHash;
+              dirty = true;
+            }
+          }
+          if (dirty) {
+            window.history.replaceState({}, '', u.pathname + u.search + u.hash);
+          }
+        }
+      } catch (e) {}
+    })();
+
+    function journalApiBase() {
+      try {
+        var s = sessionStorage.getItem('journal_api_base');
+        if (s) return String(s).trim().replace(/\/+$/, '');
+      } catch (e) {}
+      try {
+        var meta = document.querySelector('meta[name="journal-api-base"]');
+        if (meta && meta.content && String(meta.content).trim())
+          return String(meta.content).trim().replace(/\/+$/, '');
+      } catch (e) {}
+      return '';
+    }
+
+    function apiUrl(path) {
+      var p = String(path || '');
+      if (!p.startsWith('/')) p = '/' + p;
+      var base = journalApiBase();
+      if (!base) return p;
+      return base + p;
+    }
+
+    function journalApiKey() {
+      if (typeof window.__JOURNAL_API_KEY__ === 'string' && window.__JOURNAL_API_KEY__)
+        return window.__JOURNAL_API_KEY__;
+      try {
+        return sessionStorage.getItem('journal_api_key') || '';
+      } catch (e) {
+        return '';
+      }
+    }
+
+    const elCust = document.getElementById('custIn');
+    const elModel = document.getElementById('modelIn');
+    const elOrder = document.getElementById('orderIn');
+    const elCustSug = document.getElementById('custSug');
+    const elModelSug = document.getElementById('modelSug');
+    const elOrderSug = document.getElementById('orderSug');
+    const elCustPill = document.getElementById('custPill');
+    const elModelPill = document.getElementById('modelPill');
+    const elOrderPill = document.getElementById('orderPill');
+    const elReset = document.getElementById('reset');
+    const trackStatus = document.getElementById('trackStatus');
+    const trackThead = document.getElementById('trackThead');
+    const trackTbody = document.getElementById('trackTbody');
+
+    let trackPollTimer = null;
+    var TRACK_POLL_MS = 22000;
+    window.__trackUrgentIds__ = [];
+    window.__allTrackItems__ = [];
+    window.__trackSelectedRowId__ = '';
+
+    function stopTrackPoll() {
+      if (trackPollTimer) {
+        clearInterval(trackPollTimer);
+        trackPollTimer = null;
+      }
+    }
+
+    function startTrackPoll() {
+      stopTrackPoll();
+      trackPollTimer = setInterval(function () {
+        if (document.hidden) return;
+        loadTrackData(true);
+      }, TRACK_POLL_MS);
+    }
+
+    function normKey(s) {
+      return String(s || '').trim().toLowerCase().replace(/\s+/g, ' ');
+    }
+
+    let customerKey = '';
+    let customerLabel = '';
+    let modelKey = '';
+    let modelLabel = '';
+    let orderVal = '';
+    let pickSheet = '';
+    let pickRow = null;
+
+    function filterTrackItems(items) {
+      var out = items.slice();
+      if (customerKey) {
+        out = out.filter(function (it) { return it.customer_key === customerKey; });
+      } else {
+        var ct = normKey(elCust.value);
+        if (ct) {
+          out = out.filter(function (it) {
+            return normKey(it.customer_label).indexOf(ct) >= 0
+              || normKey(it.customer_key || '').indexOf(ct) >= 0;
+          });
+        }
+      }
+      if (modelKey) {
+        out = out.filter(function (it) { return it.model_key === modelKey; });
+      } else {
+        var mt = normKey(elModel.value);
+        if (mt) {
+          out = out.filter(function (it) { return normKey(it.model_label).indexOf(mt) >= 0; });
+        }
+      }
+      var ov = String(orderVal || '').trim().toLowerCase();
+      if (ov) {
+        out = out.filter(function (it) {
+          return String(it.order || '').toLowerCase().indexOf(ov) >= 0;
+        });
+      }
+      return out;
+    }
+
+    function hasActiveFilter() {
+      if (customerKey) return true;
+      if (modelKey) return true;
+      if (String(orderVal || '').trim()) return true;
+      if (normKey(elCust.value)) return true;
+      if (normKey(elModel.value)) return true;
+      return false;
+    }
+
+    function getDisplayedItems() {
+      var all = window.__allTrackItems__ || [];
+      if (!hasActiveFilter()) {
+        return all.filter(function (it) { return !it.completed; });
+      }
+      return filterTrackItems(all);
+    }
+
+    var tFilter = null;
+    function scheduleApplyFilter() {
+      clearTimeout(tFilter);
+      tFilter = setTimeout(function () { applyFilterAndRender(); }, 140);
+    }
+
+    function applyFilterAndRender() {
+      var all = window.__allTrackItems__ || [];
+      var incCount = all.filter(function (it) { return !it.completed; }).length;
+      var shown = getDisplayedItems();
+      if (trackStatus && trackStatus.className !== 'err') {
+        var msg = 'Невыполненных в журнале: ' + incCount;
+        if (hasActiveFilter()) {
+          msg += ' · по фильтру строк: ' + shown.length;
+          var dn = shown.filter(function (it) { return it.completed; }).length;
+          if (dn) msg += ' (из них выполнено: ' + dn + ')';
+        } else {
+          msg += ' · в таблице: ' + shown.length;
+        }
+        trackStatus.textContent = msg;
+      }
+      renderTrackTable(shown.slice(), window.__lastTrackStages__ || []);
+    }
+
+    function sortTrackItems(items) {
+      var u = window.__trackUrgentIds__ || [];
+      var seen = {};
+      var urgent = [];
+      for (var i = 0; i < u.length; i++) {
+        var id = u[i];
+        for (var j = 0; j < items.length; j++) {
+          if (items[j].id === id && !seen[id]) {
+            seen[id] = true;
+            urgent.push(items[j]);
+            break;
+          }
+        }
+      }
+      var rest = items.filter(function (it) { return !seen[it.id]; });
+      return urgent.concat(rest);
+    }
+
+    function fmtProgNum(x) {
+      if (x === null || x === undefined) return '';
+      var n = Number(x);
+      if (isNaN(n)) return '';
+      if (Math.abs(n - Math.round(n)) < 1e-6) return String(Math.round(n));
+      var t = n.toFixed(4).replace(/\.?0+$/, '');
+      return t || '0';
+    }
+
+    function syncTrackRowFocusAfterRender() {
+      var wrap = trackTbody && trackTbody.closest('.track-wrap');
+      if (!wrap || !trackTbody) return;
+      var sel = window.__trackSelectedRowId__ || '';
+      if (sel) {
+        var found = false;
+        trackTbody.querySelectorAll('.track-row').forEach(function (tr) {
+          if (tr.getAttribute('data-track-id') === sel) found = true;
+        });
+        if (!found) {
+          window.__trackSelectedRowId__ = '';
+          sel = '';
+        }
+      }
+      wrap.classList.toggle('track-row-focus', !!sel);
+      trackTbody.querySelectorAll('.track-row').forEach(function (tr) {
+        tr.classList.toggle('track-row-selected', !!sel && tr.getAttribute('data-track-id') === sel);
+      });
+    }
+
+    function renderTrackTable(items, stages) {
+      window.__lastTrackItems__ = items;
+      window.__lastTrackStages__ = stages || [];
+      var urgentIds = window.__trackUrgentIds__ || [];
+      var urgentSet = {};
+      for (var ui = 0; ui < urgentIds.length; ui++) urgentSet[urgentIds[ui]] = true;
+      var rows = sortTrackItems(items.slice());
+
+      if (!trackThead || !trackTbody) return;
+
+      var stagesMeta = (stages && stages.length) ? stages : (window.__lastTrackStages__ || []);
+      var stageHint = stagesMeta.length
+        ? stagesMeta.map(function (s) { return s.letter + ': ' + (s.title || ''); }).join('; ')
+        : '';
+      trackThead.innerHTML = '<tr><th class="num">№</th><th>Наряд</th><th>Дата</th><th>Заказчик</th><th>Марка</th><th>Кол-во</th><th class="dots" title="' + escapeHtml(stageHint) + '">Этапы</th><th>Статус</th><th></th></tr>';
+
+      var body = '';
+      for (var i = 0; i < rows.length; i++) {
+        var it = rows[i];
+        var isDone = !!it.completed;
+        var isUrgent = !!urgentSet[it.id] && !isDone;
+        var stageOk = it.stage_ok || [];
+        var stageNa = it.stage_na || [];
+        var stagePartial = it.stage_partial || [];
+        var progDoneArr = it.stage_progress_done || [];
+        var progPlanArr = it.stage_progress_plan || [];
+        var dots = '';
+        for (var d = 0; d < stageOk.length; d++) {
+          var stOne = stagesMeta[d] || {};
+          var stageName = (stOne.title || stOne.letter || ('Этап ' + (d + 1))).trim();
+          var letter = (stOne.letter || '').trim();
+          var head = stageName + (letter ? ' (' + letter + ')' : '');
+          var isNaSkip = !!stageNa[d];
+          var isPartial = !!stagePartial[d];
+          var ok = !!stageOk[d];
+          var pd = progDoneArr[d];
+          var pp = progPlanArr[d];
+          var cnt = (pd !== null && pd !== undefined && pp !== null && pp !== undefined)
+            ? (fmtProgNum(pd) + ' из ' + fmtProgNum(pp))
+            : '';
+          var tipText;
+          if (isNaSkip) {
+            tipText = head + ' — не делается (−), засчитано как готово';
+          } else if (isPartial) {
+            tipText = head + ' — ' + (cnt || 'частично') + ' (выполнено не всё по плану)';
+          } else if (ok) {
+            tipText = head + ' — готово' + (cnt ? (' (' + cnt + ')') : '');
+          } else {
+            tipText = head + ' — ' + (cnt ? (cnt + ', не готово') : 'не готово');
+          }
+          var tipAttr = escapeHtml(tipText);
+          var dotKind = isNaSkip ? 'na' : (isPartial ? 'partial' : (ok ? 'on' : 'off'));
+          dots += '<span role="button" tabindex="0" class="dot dot-tip ' + dotKind
+            + '" title="' + tipAttr + '" aria-label="' + tipAttr + '"></span>';
+        }
+        body += '<tr class="track-row' + (isUrgent ? ' urgent' : '') + (isDone ? ' completed' : '') + '" data-track-id="' + escapeHtml(String(it.id)) + '">';
+        body += '<td class="num">' + (i + 1) + '</td>';
+        var pdfUrl = buildPdfUrlForTrackItem(it);
+        if (pdfUrl) {
+          body += '<td><a href="' + escapeHtml(pdfUrl) + '" target="_blank" rel="noopener noreferrer" style="color: var(--link); text-decoration: underline;">'
+            + escapeHtml(String(it.order))
+            + '</a></td>';
+        } else {
+          body += '<td>' + escapeHtml(String(it.order)) + '</td>';
+        }
+        body += '<td>' + escapeHtml(it.date_display) + '</td>';
+        body += '<td>' + escapeHtml(it.customer_label || '') + '</td>';
+        body += '<td>' + escapeHtml(it.model_label || '') + '</td>';
+        body += '<td>' + escapeHtml(String(it.qty_label || '').trim() || '—') + '</td>';
+        body += '<td class="dots">' + dots + '</td>';
+        body += '<td>' + (isDone ? '<span class="done-badge">Готово</span>' : '<span class="work-badge">В работе</span>') + '</td>';
+        if (isDone) {
+          body += '<td><span class="work-badge">—</span></td>';
+        } else {
+          var urgLabel = isUrgent ? 'Снять' : 'Срочно';
+          body += '<td><button type="button" class="urgent-btn" data-urgent="' + escapeHtml(it.id) + '">' + urgLabel + '</button></td>';
+        }
+        body += '</tr>';
+      }
+      trackTbody.innerHTML = body;
+      trackTbody.querySelectorAll('.urgent-btn').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          toggleUrgentServer(btn.getAttribute('data-urgent'));
+        });
+      });
+      function showStageTip(el, ev) {
+        if (ev) {
+          ev.preventDefault();
+          ev.stopPropagation();
+        }
+        var msg = (el.getAttribute('title') || el.getAttribute('aria-label') || '').trim();
+        if (!msg) return;
+        if (tg && tg.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
+        if (tg && typeof tg.showAlert === 'function') {
+          tg.showAlert(msg);
+        } else {
+          window.alert(msg);
+        }
+      }
+      trackTbody.querySelectorAll('.dot-tip').forEach(function (dot) {
+        dot.addEventListener('click', function (ev) { showStageTip(dot, ev); });
+        dot.addEventListener('keydown', function (ev) {
+          if (ev.key === 'Enter' || ev.key === ' ') {
+            showStageTip(dot, ev);
+          }
+        });
+      });
+      syncTrackRowFocusAfterRender();
+    }
+
+    trackTbody.addEventListener('click', function (ev) {
+      if (ev.target.closest('button, a, .dot-tip, input, select, textarea')) return;
+      var tr = ev.target.closest('.track-row');
+      if (!tr || !trackTbody.contains(tr)) return;
+      var id = tr.getAttribute('data-track-id');
+      if (id === null || id === '') return;
+      if (window.__trackSelectedRowId__ === id) {
+        window.__trackSelectedRowId__ = '';
+      } else {
+        window.__trackSelectedRowId__ = id;
+      }
+      syncTrackRowFocusAfterRender();
+    });
+
+    async function toggleUrgentServer(rawId) {
+      var id = rawId ? String(rawId) : '';
+      if (!id) return;
+      var meta = findTrackItemById(id);
+      var reqBody = { id: id };
+      if (meta) {
+        reqBody.notify_order = String(meta.order || '');
+        reqBody.notify_date = String(meta.date_display || '');
+        reqBody.notify_customer = String(meta.customer_label || '');
+      }
+      try {
+        const { r, data } = await post('/api/urgent/toggle', reqBody);
+        if (!r.ok) {
+          var err = data.detail || data.error || ('Ошибка ' + r.status);
+          if (Array.isArray(err)) err = err.map(function (x) { return x.msg || JSON.stringify(x); }).join('; ');
+          if (trackStatus) {
+            trackStatus.textContent = typeof err === 'string' ? err : 'Ошибка';
+            trackStatus.className = 'err';
+          }
+          return;
+        }
+        if (!data.ok) {
+          if (trackStatus) {
+            trackStatus.textContent = data.error || 'Ошибка';
+            trackStatus.className = 'err';
+          }
+          return;
+        }
+        window.__trackUrgentIds__ = data.urgent_ids || [];
+        if (trackStatus) trackStatus.className = '';
+        applyFilterAndRender();
+        if (tg && tg.HapticFeedback) tg.HapticFeedback.impactOccurred('medium');
+      } catch (e) {
+        if (trackStatus) {
+          trackStatus.textContent = 'Сеть или сервер недоступны';
+          trackStatus.className = 'err';
+        }
+      }
+    }
+
+    async function loadTrackData(silent) {
+      if (!trackStatus) return;
+      if (!silent) {
+        trackStatus.textContent = 'Загрузка…';
+        trackStatus.className = '';
+      }
+      try {
+        const { r, data } = await post('/api/incomplete_orders', {});
+        if (!r.ok) {
+          trackStatus.textContent = apiErr(data, r, 'Ошибка списка');
+          trackStatus.className = 'err';
+          return;
+        }
+        if (!data.ok && data.error) {
+          trackStatus.textContent = data.error;
+          trackStatus.className = 'err';
+          return;
+        }
+        var items = data.items || [];
+        window.__allTrackItems__ = items;
+        window.__trackUrgentIds__ = data.urgent_ids || [];
+        window.__lastTrackStages__ = data.stages || [];
+        if (!items.length) {
+          trackStatus.textContent = silent ? 'Нет строк в журнале.' : 'В книге нет нарядов (столбцы I и C пусты).';
+          trackStatus.className = '';
+          renderTrackTable([], data.stages || []);
+          return;
+        }
+        trackStatus.className = '';
+        applyFilterAndRender();
+      } catch (e) {
+        trackStatus.textContent = 'Сеть или сервер недоступны';
+        trackStatus.className = 'err';
+      }
+    }
+
+    document.getElementById('btnTrackRefresh').addEventListener('click', function () {
+      loadTrackData(false);
+    });
+    document.getElementById('btnPushNotify').addEventListener('click', function () {
+      subscribeUrgentPush();
+    });
+
+    var tCust = null, tModel = null, tOrder = null;
+
+    function escapeHtml(s) {
+      return String(s)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+
+    function buildPdfUrlForTrackItem(it) {
+      var order = String((it && it.order) ? it.order : '').trim();
+      var dateIso = String((it && it.date_iso) ? it.date_iso : '').trim();
+      var qty = String((it && it.qty_label) ? it.qty_label : '').trim();
+      if (!order || !dateIso) return '';
+      var u = apiUrl('/api/order-pdf')
+        + '?order=' + encodeURIComponent(order)
+        + '&date=' + encodeURIComponent(dateIso);
+      if (qty) u += '&qty=' + encodeURIComponent(qty);
+      return u;
+    }
+
+    function closeAllSug() {
+      elCustSug.classList.remove('visible');
+      elModelSug.classList.remove('visible');
+      elOrderSug.classList.remove('visible');
+    }
+
+    function fillSug(container, items, onPick) {
+      container.innerHTML = '';
+      if (!items || !items.length) {
+        container.classList.remove('visible');
+        return;
+      }
+      items.forEach(function (it) {
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.textContent = it.label;
+        b.addEventListener('click', function () {
+          onPick(it.key, it.label);
+          container.classList.remove('visible');
+        });
+        container.appendChild(b);
+      });
+      container.classList.add('visible');
+    }
+
+    function fillOrderSug(container, items, onPick) {
+      container.innerHTML = '';
+      if (!items || !items.length) {
+        container.classList.remove('visible');
+        return;
+      }
+      items.forEach(function (it) {
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.textContent = it.label;
+        b.addEventListener('click', function () {
+          onPick(it);
+          container.classList.remove('visible');
+        });
+        container.appendChild(b);
+      });
+      container.classList.add('visible');
+    }
+
+    async function post(path, body) {
+      const r = await fetch(apiUrl(path), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(Object.assign({ init_data: initData(), api_key: journalApiKey() }, body))
+      });
+      const data = await r.json().catch(function () { return {}; });
+      return { r: r, data: data };
+    }
+
+    function urlBase64ToUint8Array(base64String) {
+      var padding = '='.repeat((4 - (base64String.length % 4)) % 4);
+      var base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+      var rawData = window.atob(base64);
+      var outputArray = new Uint8Array(rawData.length);
+      for (var i = 0; i < rawData.length; ++i) outputArray[i] = rawData.charCodeAt(i);
+      return outputArray;
+    }
+
+    function findTrackItemById(id) {
+      var all = window.__allTrackItems__ || [];
+      var sid = String(id);
+      for (var i = 0; i < all.length; i++) {
+        if (String(all[i].id) === sid) return all[i];
+      }
+      return null;
+    }
+
+    async function subscribeUrgentPush() {
+      if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+        if (tg && typeof tg.showAlert === 'function') {
+          tg.showAlert('Уведомления здесь недоступны. На iPhone: откройте сайт в Safari, «На экран «Домой», затем откройте с иконки (iOS 16.4+).');
+        } else {
+          window.alert(
+            'Уведомления здесь недоступны. На Android откройте этот адрес в приложении Chrome (не во встроенном браузере Telegram). На iPhone: Safari → На экран «Домой».'
+          );
+        }
+        return;
+      }
+      var perm = Notification.permission;
+      if (perm !== 'granted') {
+        perm = await Notification.requestPermission();
+      }
+      if (perm !== 'granted') {
+        if (tg && typeof tg.showAlert === 'function') tg.showAlert('Разрешите уведомления для этого сайта в настройках.');
+        else window.alert('Разрешите уведомления для этого сайта в настройках.');
+        return;
+      }
+      var reg = await navigator.serviceWorker.register('./sw.js', { scope: './' });
+      await reg.update();
+      var vr = await fetch(apiUrl('/api/push/vapid-public-key'));
+      var vj = await vr.json().catch(function () { return {}; });
+      if (!vj.configured || !vj.publicKey) {
+        try { console.warn('VAPID', vj); } catch (e) {}
+        var st = journalApiBase() ? (journalApiBase() + '/api/push/status') : (window.location.origin + '/api/push/status');
+        var msg = vj.hint || ('На сервере не настроены VAPID-ключи. Откройте в браузере ' + st + ' — там диагностика.');
+        if (tg && typeof tg.showAlert === 'function') tg.showAlert(msg);
+        else window.alert(msg);
+        return;
+      }
+      var sub = await reg.pushManager.getSubscription();
+      if (!sub) {
+        sub = await reg.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: urlBase64ToUint8Array(vj.publicKey),
+        });
+      }
+      var subJson = sub.toJSON ? sub.toJSON() : sub;
+      try {
+        if (subJson && subJson.endpoint) console.log('Push endpoint:', subJson.endpoint);
+      } catch (e) {}
+      var { r: pr, data: pd } = await post('/api/push/subscribe', { subscription: subJson });
+      if (!pr.ok || !pd.ok) {
+        var err = pd.detail || pd.error || ('Ошибка ' + pr.status);
+        if (tg && typeof tg.showAlert === 'function') tg.showAlert(typeof err === 'string' ? err : 'Ошибка подписки');
+        else window.alert(typeof err === 'string' ? err : 'Ошибка подписки');
+        return;
+      }
+      try { sessionStorage.setItem('journal_push_subscribed', '1'); } catch (e) {}
+      var okPush = 'Готово. При отметке «Срочно» придёт уведомление.';
+      if (!tg && /Android/i.test(navigator.userAgent || '')) {
+        okPush += ' В Chrome: настройки уведомлений для сайта и для приложения Chrome; страницу лучше открывать в Chrome, а не во встроенном браузере.';
+      }
+      if (tg && typeof tg.showAlert === 'function') tg.showAlert('Готово. При отметке «Срочно» придёт уведомление с текстом наряда.');
+      else window.alert(okPush);
+    }
+
+    function selectCustomer(key, label) {
+      customerKey = key;
+      customerLabel = label;
+      elCust.value = label;
+      elCustPill.textContent = 'Выбрано: ' + label;
+      modelKey = '';
+      modelLabel = '';
+      elModel.value = '';
+      elModelPill.textContent = '';
+      orderVal = '';
+      elOrder.value = '';
+      elOrderPill.textContent = '';
+      pickSheet = '';
+      pickRow = null;
+      closeAllSug();
+      loadModelsAny('');
+      loadOrdersAny('');
+      applyFilterAndRender();
+    }
+
+    function selectModel(key, label) {
+      modelKey = key;
+      modelLabel = label;
+      elModel.value = label;
+      elModelPill.textContent = 'Выбрано: ' + label;
+      orderVal = '';
+      elOrder.value = '';
+      elOrderPill.textContent = '';
+      pickSheet = '';
+      pickRow = null;
+      closeAllSug();
+      loadOrdersAny(elOrder.value.trim());
+      applyFilterAndRender();
+    }
+
+    function selectOrderFromItem(it) {
+      customerKey = it.customer_key || customerKey;
+      customerLabel = it.customer_label || customerLabel;
+      modelKey = it.model_key !== undefined && it.model_key !== null ? it.model_key : modelKey;
+      modelLabel = it.model_label || modelLabel;
+      orderVal = String(it.order || '').trim();
+      if (customerLabel) {
+        elCust.value = customerLabel;
+        elCustPill.textContent = 'Выбрано: ' + customerLabel;
+      }
+      if (modelLabel) {
+        elModel.value = modelLabel;
+        elModelPill.textContent = 'Выбрано: ' + modelLabel;
+      }
+      elOrder.value = it.label || orderVal;
+      elOrderPill.textContent = 'Выбрано: ' + (it.label || orderVal);
+      pickSheet = it.sheet || '';
+      pickRow = typeof it.row === 'number' ? it.row : null;
+      elOrderSug.classList.remove('visible');
+      applyFilterAndRender();
+    }
+
+    function apiErr(data, r, fallback) {
+      var err = data.detail;
+      if (Array.isArray(err))
+        err = err.map(function (x) { return x.msg || JSON.stringify(x); }).join('; ');
+      if (typeof err !== 'string') err = err ? String(err) : '';
+      if (r.status === 404 && (!err || err === 'Not Found'))
+        return 'Запрос отклонён (404). Перезапустите: py -m uvicorn miniapp_server:app из папки проекта. Если ошибка остаётся — проверьте EXCEL_PATH в .env и доступ к файлу.';
+      return err || fallback;
+    }
+
+    async function loadCustomers(q) {
+      const { r, data } = await post('/api/suggest/customers', { q: q });
+      if (!r.ok) {
+        if (!customerKey) elCustPill.textContent = apiErr(data, r, 'Ошибка заказчиков');
+        return;
+      }
+      fillSug(elCustSug, data.items, selectCustomer);
+      var items = data.items || [];
+      if (!items.length) {
+        if (!String(q).trim()) {
+          if (!customerKey) elCustPill.textContent = 'Нет заказчиков (I) или нет файла EXCEL_PATH.';
+        } else if (!customerKey) elCustPill.textContent = 'Нет по запросу.';
+      } else if (!customerKey) elCustPill.textContent = '';
+    }
+
+    async function loadModelsAny(q) {
+      const { r, data } = await post('/api/suggest/models-any', {
+        customer_key: customerKey || '',
+        q: q
+      });
+      if (!r.ok) {
+        if (!modelKey) elModelPill.textContent = apiErr(data, r, 'Ошибка моделей');
+        return;
+      }
+      fillSug(elModelSug, data.items, function (key, label) {
+        const item = (data.items || []).find(function (x) { return x.key === key && x.label === label; });
+        if (item && item.customer_key && (!customerKey || customerKey !== item.customer_key)) {
+          selectCustomer(item.customer_key, item.customer_label || '');
+        }
+        selectModel(key, label);
+      });
+    }
+
+    async function loadOrdersAny(q) {
+      const { r, data } = await post('/api/suggest/orders-any', {
+        customer_key: customerKey || '',
+        model_key: modelKey || '',
+        q: q
+      });
+      if (!r.ok) {
+        if (!orderVal) elOrderPill.textContent = apiErr(data, r, 'Ошибка нарядов');
+        return;
+      }
+      fillOrderSug(elOrderSug, data.items, selectOrderFromItem);
+    }
+
+    elCust.addEventListener('input', function () {
+      const v = elCust.value;
+      if (v !== customerLabel) {
+        customerKey = '';
+        customerLabel = '';
+        elCustPill.textContent = '';
+        modelKey = ''; modelLabel = ''; elModel.value = ''; elModelPill.textContent = '';
+        orderVal = ''; elOrder.value = ''; elOrderPill.textContent = '';
+        pickSheet = ''; pickRow = null;
+      }
+      clearTimeout(tCust);
+      tCust = setTimeout(function () {
+        loadCustomers(v.trim());
+        loadModelsAny(elModel.value.trim());
+        loadOrdersAny(elOrder.value.trim());
+        scheduleApplyFilter();
+      }, 260);
+    });
+
+    elModel.addEventListener('input', function () {
+      const v = elModel.value;
+      if (v !== modelLabel) {
+        modelKey = '';
+        modelLabel = '';
+        elModelPill.textContent = '';
+        orderVal = ''; elOrder.value = ''; elOrderPill.textContent = '';
+        pickSheet = ''; pickRow = null;
+      }
+      clearTimeout(tModel);
+      tModel = setTimeout(function () {
+        loadModelsAny(v.trim());
+        loadOrdersAny(elOrder.value.trim());
+        scheduleApplyFilter();
+      }, 260);
+    });
+
+    elOrder.addEventListener('input', function () {
+      pickSheet = '';
+      pickRow = null;
+      orderVal = elOrder.value.trim();
+      elOrderPill.textContent = orderVal ? ('Наряд: ' + orderVal) : '';
+      clearTimeout(tOrder);
+      tOrder = setTimeout(function () {
+        loadOrdersAny(orderVal);
+        scheduleApplyFilter();
+      }, 220);
+      scheduleApplyFilter();
+    });
+
+    document.addEventListener('visibilitychange', function () {
+      if (document.visibilityState !== 'visible') return;
+      loadTrackData(true);
+    });
+
+    elReset.addEventListener('click', function () {
+      customerKey = ''; customerLabel = ''; modelKey = ''; modelLabel = ''; orderVal = '';
+      pickSheet = ''; pickRow = null;
+      elCust.value = ''; elModel.value = ''; elOrder.value = '';
+      elCustPill.textContent = ''; elModelPill.textContent = ''; elOrderPill.textContent = '';
+      closeAllSug();
+      applyFilterAndRender();
+      loadCustomers('');
+      loadModelsAny('');
+      loadOrdersAny('');
+    });
+
+    document.addEventListener('click', function (e) {
+      if (e.target.tagName === 'BUTTON' && e.target.closest('.suggestions')) return;
+      if (['INPUT', 'BUTTON'].indexOf(e.target.tagName) >= 0) return;
+      closeAllSug();
+    });
+
+    loadTrackData(false);
+    setTimeout(function () {
+      loadCustomers('');
+      loadModelsAny('');
+      loadOrdersAny('');
+    }, 60);
+    startTrackPoll();
+  </script>
+</body>
+</html>
