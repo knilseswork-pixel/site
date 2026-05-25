@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WORKOUT Sport Center — Методика</title>
+  <meta name="description" content="Методические материалы WORKOUT Sport Center — Здоровое поколение">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/main.css">
+  <link rel="icon" href="logo.jpg" type="image/jpeg">
+</head>
+<body>
+  <div class="page-bg" aria-hidden="true"></div>
+
+  <header class="header">
+    <a href="#" class="header__brand" data-action="home">
+      <img src="logo.jpg" alt="WORKOUT Sport Center" class="header__logo" width="52" height="52">
+      <div class="header__titles">
+        <span class="header__name">WORKOUT</span>
+        <span class="header__tagline">Здоровое поколение · Sport Center</span>
+      </div>
+    </a>
+    <nav class="header__nav">
+      <button type="button" class="header__link is-active" data-filter="all">Все материалы</button>
+      <button type="button" class="header__link" data-filter="Уровни">Уровни</button>
+      <button type="button" class="header__link" data-filter="Методика">Методика</button>
+      <button type="button" class="header__link" data-filter="Разминка">Разминка</button>
+    </nav>
+    <div class="header__search-wrap">
+      <input type="search" class="header__search" placeholder="Поиск по материалам…" autocomplete="off" id="searchInput">
+    </div>
+  </header>
+
+  <main class="main">
+    <section class="hero" id="hero">
+      <div class="hero__badge">Методическая база · с 2016</div>
+      <h1 class="hero__title">Тренировочные материалы</h1>
+      <p class="hero__text">Интерактивная библиотека блоков для тренеров WORKOUT. Нажмите на карточку — откроется полный материал с плавным переходом.</p>
+      <div class="hero__stats" id="heroStats"></div>
+    </section>
+
+    <section class="grid-section">
+      <div class="grid" id="cardsGrid" role="list"></div>
+      <p class="grid-empty hidden" id="gridEmpty">Ничего не найдено. Попробуйте другой запрос.</p>
+    </section>
+  </main>
+
+  <!-- Detail overlay -->
+  <div class="detail" id="detail" aria-hidden="true">
+    <div class="detail__backdrop" data-action="close-detail"></div>
+    <article class="detail__panel" id="detailPanel">
+      <header class="detail__header">
+        <button type="button" class="detail__back" data-action="close-detail" aria-label="Назад">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
+          Назад
+        </button>
+        <button type="button" class="detail__bookmark" id="detailBookmark" aria-label="В закладки">
+          <svg class="icon-bookmark" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/></svg>
+        </button>
+      </header>
+      <div class="detail__hero-media" id="detailMedia"></div>
+      <div class="detail__body">
+        <span class="detail__category" id="detailCategory"></span>
+        <h2 class="detail__title" id="detailTitle"></h2>
+        <p class="detail__meta" id="detailMeta"></p>
+        <div class="detail__content prose" id="detailContent"></div>
+        <div class="detail__videos" id="detailVideos"></div>
+      </div>
+    </article>
+  </div>
+
+  <!-- FLIP transition ghost -->
+  <div class="card-ghost" id="cardGhost" aria-hidden="true"></div>
+
+  <footer class="footer">
+    <img src="logo.jpg" alt="" class="footer__logo" width="40" height="40">
+    <p>© WORKOUT Sport Center · Здоровое поколение · 2016</p>
+  </footer>
+
+  <script src="js/main.js" type="module"></script>
+</body>
+</html>
