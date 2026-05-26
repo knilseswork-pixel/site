@@ -174,12 +174,27 @@
       (item.groups || []).forEach(function (g, idx) {
         html += '<div class="admin-group-block" data-group-idx="' + idx + '">';
         html += '<h4 class="admin-group-block__title">' + escapeHtml(g.label) + '</h4>';
-        html += field('Фото', 'secGphoto' + idx, g.photo || '', 0);
-        html += field('Описание', 'secGdesc' + idx, g.description || '', 3);
-        html += field('Цель' + (tpl === 'gpp-level' ? '' : ' упражнения'), 'secGgoal' + idx, g.goal || '', 2);
-        if (tpl === 'gpp-level') {
-          html += field('Принцип действия', 'secGprinciple' + idx, g.principle || '', 2);
-          html += field('Ошибки', 'secGerrors' + idx, g.errors || '', 2);
+        if (g.exercises && g.exercises.length) {
+          g.exercises.forEach(function (ex, exIdx) {
+            html += '<div class="admin-exercise-block">';
+            html += '<h5>Упражнение ' + (exIdx + 1) + '</h5>';
+            html += field('Название', 'secG' + idx + 'ex' + exIdx + 'title', ex.title || '', 0);
+            html += field('Описание', 'secG' + idx + 'ex' + exIdx + 'desc', ex.description || '', 3);
+            html += field('Цель', 'secG' + idx + 'ex' + exIdx + 'goal', ex.goal || '', 2);
+            if (tpl === 'gpp-level') {
+              html += field('Принцип действия', 'secG' + idx + 'ex' + exIdx + 'principle', ex.principle || '', 2);
+              html += field('Ошибки', 'secG' + idx + 'ex' + exIdx + 'errors', ex.errors || '', 2);
+            }
+            html += '</div>';
+          });
+        } else {
+          html += field('Фото', 'secGphoto' + idx, g.photo || '', 0);
+          html += field('Описание', 'secGdesc' + idx, g.description || '', 3);
+          html += field('Цель' + (tpl === 'gpp-level' ? '' : ' упражнения'), 'secGgoal' + idx, g.goal || '', 2);
+          if (tpl === 'gpp-level') {
+            html += field('Принцип действия', 'secGprinciple' + idx, g.principle || '', 2);
+            html += field('Ошибки', 'secGerrors' + idx, g.errors || '', 2);
+          }
         }
         html += '</div>';
       });
@@ -217,17 +232,34 @@
 
     if (tpl === 'gpp-level' || tpl === 'sfpp-level') {
       (item.groups || []).forEach(function (g, idx) {
-        var p = $('#secGphoto' + idx);
-        var d = $('#secGdesc' + idx);
-        var goal = $('#secGgoal' + idx);
-        if (p) g.photo = p.value.trim();
-        if (d) g.description = d.value.trim();
-        if (goal) g.goal = goal.value.trim();
-        if (tpl === 'gpp-level') {
-          var pr = $('#secGprinciple' + idx);
-          var er = $('#secGerrors' + idx);
-          if (pr) g.principle = pr.value.trim();
-          if (er) g.errors = er.value.trim();
+        if (g.exercises && g.exercises.length) {
+          g.exercises.forEach(function (ex, exIdx) {
+            var t = $('#secG' + idx + 'ex' + exIdx + 'title');
+            var d = $('#secG' + idx + 'ex' + exIdx + 'desc');
+            var goal = $('#secG' + idx + 'ex' + exIdx + 'goal');
+            if (t) ex.title = t.value.trim();
+            if (d) ex.description = d.value.trim();
+            if (goal) ex.goal = goal.value.trim();
+            if (tpl === 'gpp-level') {
+              var pr = $('#secG' + idx + 'ex' + exIdx + 'principle');
+              var er = $('#secG' + idx + 'ex' + exIdx + 'errors');
+              if (pr) ex.principle = pr.value.trim();
+              if (er) ex.errors = er.value.trim();
+            }
+          });
+        } else {
+          var p = $('#secGphoto' + idx);
+          var d = $('#secGdesc' + idx);
+          var goal = $('#secGgoal' + idx);
+          if (p) g.photo = p.value.trim();
+          if (d) g.description = d.value.trim();
+          if (goal) g.goal = goal.value.trim();
+          if (tpl === 'gpp-level') {
+            var pr = $('#secGprinciple' + idx);
+            var er = $('#secGerrors' + idx);
+            if (pr) g.principle = pr.value.trim();
+            if (er) g.errors = er.value.trim();
+          }
         }
       });
     }

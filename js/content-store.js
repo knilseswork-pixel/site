@@ -183,8 +183,11 @@
           });
           if (!art) return;
           var desc = String(item.description || '').trim();
-          if (desc && (!art.body || !art.body.length)) {
-            art.body = [desc];
+          if (desc) {
+            var hasBody = art.body && art.body.length && art.body.some(function (p) {
+              return String(p || '').trim().length > 0;
+            });
+            if (!hasBody) art.body = [desc];
           }
           if (item.photo && !art.photo) art.photo = item.photo;
           if (desc && (!art.excerpt || !art.excerpt.trim())) {

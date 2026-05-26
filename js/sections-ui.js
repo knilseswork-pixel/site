@@ -42,8 +42,140 @@
       return 'Видео: ' + item.videos.length;
     }
     if (item.photo) return 'Есть фото';
+    if (item.groups && item.groups.some(function (g) {
+      return g.exercises && g.exercises.length;
+    })) {
+      var n = 0;
+      item.groups.forEach(function (g) {
+        n += (g.exercises || []).length;
+      });
+      return n + ' упражнений · 3 группы';
+    }
     if (item.groups && item.groups.length) return 'Заполнено блоков: ' + item.groups.length;
     return 'Нажмите, чтобы открыть и заполнить';
+  }
+
+  function groupHasExercises(g) {
+    return g && g.exercises && g.exercises.length > 0;
+  }
+
+  function itemHasExerciseGroups(item) {
+    return (item.groups || []).some(groupHasExercises);
+  }
+
+  function renderExerciseDetail(ex) {
+    return (
+      '<div class="gpp-exercise-detail">' +
+      '<button type="button" class="gpp-back" data-gpp-back="list">← К списку упражнений</button>' +
+      '<h3 class="gpp-exercise-detail__title">' +
+      escapeHtml(ex.title) +
+      '</h3>' +
+      block('Описание', '<p>' + textToHtml(ex.description) + '</p>') +
+      block('Цель', '<p>' + textToHtml(ex.goal) + '</p>') +
+      block('Принцип действия', '<p>' + textToHtml(ex.principle) + '</p>') +
+      block('Ошибки', '<p>' + textToHtml(ex.errors) + '</p>') +
+      '</div>'
+    );
+  }
+
+  function bindGppLevelNav(container, item) {
+    var groups = item.groups || [];
+    var groupsEl = container.querySelector('.gpp-groups');
+    var listEl = container.querySelector('.gpp-exercise-list');
+    var detailEl = container.querySelector('.gpp-exercise-view');
+    var listTitle = container.querySelector('.gpp-exercise-list__title');
+    var listItems = container.querySelector('.gpp-exercise-items');
+    var listBack = container.querySelector('[data-gpp-back="groups"]');
+
+    function showGroups() {
+      groupsEl.classList.remove('hidden');
+      listEl.classList.add('hidden');
+      detailEl.classList.add('hidden');
+      detailEl.innerHTML = '';
+    }
+
+    if (listBack) listBack.addEventListener('click', showGroups);
+
+    function showList(groupId) {
+      var g = groups.find(function (x) {
+        return x.id === groupId;
+      });
+      if (!g) return;
+      groupsEl.classList.add('hidden');
+      listEl.classList.remove('hidden');
+      detailEl.classList.add('hidden');
+      detailEl.innerHTML = '';
+      if (listTitle) listTitle.textContent = g.label;
+      if (listItems) {
+        listItems.innerHTML = (g.exercises || [])
+          .map(function (ex) {
+            return (
+              '<li><button type="button" class="gpp-exercise-btn" data-ex-id="' +
+              escapeHtml(ex.id) +
+              '">' +
+              escapeHtml(ex.title) +
+              '</button></li>'
+            );
+          })
+          .join('');
+      }
+      if (listItems) listItems.querySelectorAll('.gpp-exercise-btn').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          var ex = (g.exercises || []).find(function (e) {
+            return e.id === btn.dataset.exId;
+          });
+          if (!ex) return;
+          listEl.classList.add('hidden');
+          detailEl.classList.remove('hidden');
+          detailEl.innerHTML = renderExerciseDetail(ex);
+          detailEl.querySelector('[data-gpp-back="list"]').addEventListener('click', function () {
+            showList(g.id);
+          });
+          detailEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        });
+      });
+    }
+
+    groupsEl.querySelectorAll('.gpp-group-btn').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        showList(btn.dataset.groupId);
+      });
+    });
+  }
+
+  function renderGppExerciseLevel(item) {
+    var groups = item.groups || [];
+    var btns = groups
+      .filter(groupHasExercises)
+      .map(function (g) {
+        var count = (g.exercises || []).length;
+        return (
+          '<button type="button" class="gpp-group-btn" data-group-id="' +
+          escapeHtml(g.id) +
+          '">' +
+          '<span class="gpp-group-btn__label">' +
+          escapeHtml(g.label) +
+          '</span>' +
+          '<span class="gpp-group-btn__count">' +
+          count +
+          ' упр.</span></button>'
+        );
+      })
+      .join('');
+    return (
+      '<div class="gpp-level-ui" data-gpp-level="1">' +
+      '<p class="gpp-level-ui__hint">Выберите группу мышц — откроется список упражнений.</p>' +
+      '<div class="gpp-groups">' +
+      btns +
+      '</div>' +
+      '<div class="gpp-exercise-list hidden">' +
+      '<button type="button" class="gpp-back gpp-back--top" data-gpp-back="groups">← К группам</button>' +
+      '<h3 class="gpp-exercise-list__title"></h3>' +
+      '<ul class="gpp-exercise-items"></ul>' +
+      '</div>' +
+      '<div class="gpp-exercise-view hidden"></div>' +
+      '</div>'
+    );
   }
 
   var SECTIONS_IN_MATERIALS = ['competition', 'new-client'];
@@ -175,7 +307,9 @@
       html += block('Страховка', '<p>' + textToHtml(item.spotting) + '</p>');
     }
 
-    if (tpl === 'gpp-level' || tpl === 'sfpp-level') {
+    if (tpl === 'gpp-level' && itemHasExerciseGroups(item)) {
+      html = renderGppExerciseLevel(item);
+    } else if (tpl === 'gpp-level' || tpl === 'sfpp-level') {
       (item.groups || []).forEach(function (g) {
         var inner = '';
         if (g.photo) {
@@ -203,6 +337,8 @@
     }
 
     $('#detailContent').innerHTML = html || '<p class="prose">Контент пока не заполнен. Используйте админ-панель.</p>';
+    var gppRoot = $('#detailContent .gpp-level-ui');
+    if (gppRoot) bindGppLevelNav(gppRoot, item);
     $('#detailVideos').innerHTML = '';
     $('#detailVideos').hidden = true;
     $('#detailMedia').innerHTML = item.photo
