@@ -1361,23 +1361,26 @@ body.detail-open .bottom-bar {
   transition: opacity 0.2s ease, width 0.2s ease;
 }
 
-.section-card:hover,
-.section-card:focus-visible {
-  z-index: 30;
-  width: 220px;
-  min-height: 72px;
-  max-height: 140px;
-  transform: scale(1.12);
-  border-color: rgba(255, 45, 45, 0.55);
-  background: var(--surface-2);
-  box-shadow: 0 14px 36px rgba(0, 0, 0, 0.45);
-  outline: none;
-}
+/* Увеличение только на ПК с мышью (на телефоне вызывало «пульсацию») */
+@media (hover: hover) and (pointer: fine) {
+  .section-card:hover,
+  .section-card:focus-visible {
+    z-index: 30;
+    width: 220px;
+    min-height: 72px;
+    max-height: 140px;
+    transform: scale(1.12);
+    border-color: rgba(255, 45, 45, 0.55);
+    background: var(--surface-2);
+    box-shadow: 0 14px 36px rgba(0, 0, 0, 0.45);
+    outline: none;
+  }
 
-.section-card:hover::before,
-.section-card:focus-visible::before {
-  width: 4px;
-  opacity: 1;
+  .section-card:hover::before,
+  .section-card:focus-visible::before {
+    width: 4px;
+    opacity: 1;
+  }
 }
 
 .section-card__body {
@@ -1397,10 +1400,12 @@ body.detail-open .bottom-bar {
   overflow: hidden;
 }
 
-.section-card:hover .section-card__title,
-.section-card:focus-visible .section-card__title {
-  font-size: 0.875rem;
-  -webkit-line-clamp: 3;
+@media (hover: hover) and (pointer: fine) {
+  .section-card:hover .section-card__title,
+  .section-card:focus-visible .section-card__title {
+    font-size: 0.875rem;
+    -webkit-line-clamp: 3;
+  }
 }
 
 .section-card__excerpt {
@@ -1414,11 +1419,13 @@ body.detail-open .bottom-bar {
   transition: opacity 0.2s ease, max-height 0.25s ease, margin 0.2s ease;
 }
 
-.section-card:hover .section-card__excerpt,
-.section-card:focus-visible .section-card__excerpt {
-  opacity: 1;
-  max-height: 4.5em;
-  margin-top: 6px;
+@media (hover: hover) and (pointer: fine) {
+  .section-card:hover .section-card__excerpt,
+  .section-card:focus-visible .section-card__excerpt {
+    opacity: 1;
+    max-height: 4.5em;
+    margin-top: 6px;
+  }
 }
 
 .item-photo-wrap {
@@ -1528,12 +1535,50 @@ body.detail-open .bottom-bar {
   .section-card {
     width: calc(50% - 4px);
     min-width: 100px;
+    max-height: none;
+    transition: border-color 0.15s ease, background 0.15s ease;
   }
 
   .section-card:hover,
+  .section-card:focus,
   .section-card:focus-visible {
-    width: min(92vw, 260px);
-    transform: scale(1.06);
+    width: calc(50% - 4px);
+    min-height: 48px;
+    max-height: none;
+    transform: none;
+    box-shadow: none;
+    z-index: 1;
+  }
+
+  .section-card:active {
+    border-color: rgba(255, 45, 45, 0.45);
+    background: var(--surface-2);
+  }
+
+  .section-card__excerpt {
+    display: none;
+  }
+}
+
+@media (hover: none), (pointer: coarse) {
+  .section-card {
+    max-height: none;
+    transition: border-color 0.15s ease, background 0.15s ease;
+  }
+
+  .section-card:hover,
+  .section-card:focus,
+  .section-card:focus-visible {
+    min-height: 48px;
+    max-height: none;
+    transform: none !important;
+    box-shadow: none;
+    z-index: 1;
+  }
+
+  .section-card:active {
+    border-color: rgba(255, 45, 45, 0.45);
+    background: var(--surface-2);
   }
 }
 

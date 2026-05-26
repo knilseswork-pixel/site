@@ -95,6 +95,9 @@
       card.addEventListener('click', function () {
         openSectionItem(card.dataset.sectionId, card.dataset.itemId);
       });
+      card.addEventListener('touchend', function () {
+        card.blur();
+      });
       card.addEventListener('keydown', function (e) {
         if (e.key === 'Enter' || e.key === ' ') {
           e.preventDefault();
