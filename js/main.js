@@ -51,8 +51,29 @@
     }).join('/');
   }
 
+  function isMobileViewer() {
+    return window.matchMedia('(max-width: 900px)').matches ||
+      window.matchMedia('(pointer: coarse)').matches;
+  }
+
+  function vkEmbedToWatchUrl(embed) {
+    try {
+      var u = new URL(embed, window.location.href);
+      var oid = u.searchParams.get('oid');
+      var id = u.searchParams.get('id');
+      var hash = u.searchParams.get('hash');
+      if (!oid || !id) return embed;
+      var pathId = oid.charAt(0) === '-' ? 'video-' + oid.slice(1) + '_' + id : 'video' + oid + '_' + id;
+      var url = 'https://vk.com/' + pathId;
+      if (hash) url += '?hash=' + hash;
+      return url;
+    } catch (e) {
+      return embed;
+    }
+  }
+
   function renderVideoBlock(v) {
-    var title = v.title || 'Видео';
+    var title = escapeHtml(v.title || 'Видео');
     if (v.src) {
       var src = videoSrc(v.src);
       return (
@@ -61,9 +82,30 @@
       );
     }
     if (v.embed) {
+      var watchUrl = vkEmbedToWatchUrl(v.embed);
+      var safeEmbed = v.embed.replace(/"/g, '&quot;');
+      var safeWatch = watchUrl.replace(/"/g, '&quot;');
+
+      if (isMobileViewer()) {
+        return (
+          '<div class="video-block video-block--vk-mobile">' +
+          '<h3>' + title + '</h3>' +
+          '<a class="vk-open-card" href="' + safeWatch + '" target="_blank" rel="noopener noreferrer">' +
+          '<span class="vk-open-card__icon" aria-hidden="true">▶</span>' +
+          '<span class="vk-open-card__text">Смотреть в VK</span>' +
+          '<span class="vk-open-card__sub">Нажмите — откроется приложение или сайт VK</span>' +
+          '</a></div>'
+        );
+      }
+
       return (
-        '<div class="video-block"><h3>' + title + '</h3>' +
-        '<iframe src="' + v.embed + '" allow="autoplay; encrypted-media; fullscreen; picture-in-picture" allowfullscreen loading="lazy"></iframe></div>'
+        '<div class="video-block video-block--vk">' +
+        '<h3>' + title + '</h3>' +
+        '<div class="video-frame-wrap">' +
+        '<iframe src="' + safeEmbed + '" allow="autoplay; encrypted-media; fullscreen; picture-in-picture" allowfullscreen loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>' +
+        '</div>' +
+        '<a class="vk-open-link" href="' + safeWatch + '" target="_blank" rel="noopener noreferrer">Не воспроизводится? Открыть в VK</a>' +
+        '</div>'
       );
     }
     return '';
