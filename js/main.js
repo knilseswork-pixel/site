@@ -138,7 +138,7 @@
   function getFilteredArticles() {
     var data = getContentData();
     if (!data || !data.articles) return [];
-    return data.articles.filter(function (a) {
+    var list = data.articles.filter(function (a) {
       var matchFilter = activeFilter === 'all' || a.category === activeFilter;
       var q = searchQuery.toLowerCase().trim();
       var matchSearch = !q ||
@@ -147,6 +147,14 @@
         a.category.toLowerCase().indexOf(q) >= 0;
       return matchFilter && matchSearch;
     });
+    if (!window.WorkoutLevelSort) return list;
+    var leveled = [];
+    var rest = [];
+    list.forEach(function (a) {
+      if (window.WorkoutLevelSort.getLevelRank(a) < 1000) leveled.push(a);
+      else rest.push(a);
+    });
+    return window.WorkoutLevelSort.sortByLevel(leveled).concat(rest);
   }
 
   function showLoadBanner() {

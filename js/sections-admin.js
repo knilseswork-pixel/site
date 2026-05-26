@@ -66,7 +66,7 @@
 
     list.innerHTML = (data.sections || [])
       .map(function (sec) {
-        var items = (sec.items || [])
+        var items = (window.WorkoutLevelSort ? window.WorkoutLevelSort.sortByLevel(sec.items || []) : sec.items || [])
           .map(function (item) {
             return (
               '<li class="admin-sections__item">' +

@@ -24,6 +24,18 @@
     return String(text || '').trim().length > 0;
   }
 
+  function sortItems(items) {
+    if (window.WorkoutLevelSort) return window.WorkoutLevelSort.sortByLevel(items);
+    return items || [];
+  }
+
+  function shortTitle(title) {
+    return String(title || '')
+      .replace(/уровень/gi, '')
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
+
   function itemPreview(item, template) {
     if (hasContent(item.description)) return item.description.slice(0, 120) + '…';
     if (template === 'dynamic-level' && item.videos && item.videos.length) {
@@ -42,22 +54,20 @@
 
     root.innerHTML = sections
       .map(function (sec) {
-        var cards = (sec.items || [])
+        var cards = sortItems(sec.items || [])
           .map(function (item) {
+            var label = shortTitle(item.title) || item.title;
             return (
               '<article class="section-card" role="button" tabindex="0" data-section-id="' +
               escapeHtml(sec.id) +
               '" data-item-id="' +
               escapeHtml(item.id) +
+              '" title="' +
+              escapeHtml(item.title) +
               '">' +
-              (item.photo
-                ? '<div class="section-card__thumb"><img src="' +
-                  assetUrl(item.photo) +
-                  '" alt="" loading="lazy"></div>'
-                : '<div class="section-card__thumb section-card__thumb--empty"></div>') +
               '<div class="section-card__body">' +
               '<h4 class="section-card__title">' +
-              escapeHtml(item.title) +
+              escapeHtml(label) +
               '</h4>' +
               '<p class="section-card__excerpt">' +
               escapeHtml(itemPreview(item, sec.template)) +

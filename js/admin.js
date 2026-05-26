@@ -68,7 +68,12 @@ function renderAdminList() {
   const data = getContentData();
   if (!list || !data) return;
 
-  list.innerHTML = (data.articles || [])
+  var articles = data.articles || [];
+  if (window.WorkoutLevelSort) {
+    articles = window.WorkoutLevelSort.sortByLevel(articles);
+  }
+
+  list.innerHTML = articles
     .map(
       (a) => `
     <li class="admin-list__item">
