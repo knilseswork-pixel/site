@@ -144,17 +144,18 @@
     if (!grid) return;
 
     grid.innerHTML = '';
+    grid.classList.remove('is-ready');
     if (empty) empty.classList.toggle('hidden', articles.length > 0);
 
     articles.forEach(function (article, i) {
       var saved = isBookmarked(article.id);
       var underline = article.title.length < 35 ? ' card__title--underline' : '';
-      var card = document.createElement('button');
-      card.type = 'button';
+      var card = document.createElement('article');
       card.className = 'card';
       card.style.setProperty('--i', i);
       card.dataset.id = article.id;
-      card.setAttribute('role', 'listitem');
+      card.setAttribute('role', 'button');
+      card.setAttribute('tabindex', '0');
       card.innerHTML =
         '<div class="card__media">' +
         '<div class="card__media-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M8 12h8M12 8v8"/></svg></div>' +
@@ -167,8 +168,15 @@
         '<p class="card__meta">' + formatDate(article.date) + '</p></div>';
 
       card.addEventListener('click', function (e) {
-        if (e.target.closest('[data-bookmark]')) return;
+        if (e.target.closest && e.target.closest('[data-bookmark]')) return;
         openDetail(article.id, card);
+      });
+
+      card.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          openDetail(article.id, card);
+        }
       });
 
       var bm = card.querySelector('[data-bookmark]');
@@ -181,6 +189,12 @@
 
       grid.appendChild(card);
     });
+
+    if (articles.length) {
+      requestAnimationFrame(function () {
+        grid.classList.add('is-ready');
+      });
+    }
 
     showLoadBanner();
   }

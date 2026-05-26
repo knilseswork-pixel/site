@@ -307,7 +307,7 @@ body {
 
 .grid-empty.hidden { display: none; }
 
-/* Card */
+/* Card — article, не button (внутри есть кнопка закладки) */
 .card {
   position: relative;
   display: flex;
@@ -321,18 +321,32 @@ body {
   color: inherit;
   font-family: inherit;
   opacity: 1;
+  visibility: visible;
   transform: translateY(0);
   transition:
     transform var(--transition-med),
     box-shadow var(--transition-med),
     border-color var(--transition-fast),
     background var(--transition-fast);
+  -webkit-tap-highlight-color: transparent;
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  .card {
-    animation: fadeUp 0.6s var(--ease-out) forwards;
-    animation-delay: calc(var(--i, 0) * 0.06s);
+.grid.is-ready .card {
+  animation: cardIn 0.45s var(--ease-out) forwards;
+  animation-delay: calc(var(--i, 0) * 0.05s);
+}
+
+@keyframes cardIn {
+  from { transform: translateY(16px); }
+  to { transform: translateY(0); }
+}
+
+@supports (animation: none) {
+  @media (prefers-reduced-motion: reduce) {
+    .grid.is-ready .card {
+      animation: none;
+      opacity: 1;
+    }
   }
 }
 

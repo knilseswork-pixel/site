@@ -87,34 +87,46 @@
 
   async function loadContent() {
     let loadError = null;
-
-    const remote = await fetchJsonBin();
-    if (remote?.articles?.length) {
-      contentData = remote;
-      return contentData;
-    }
+    var serverData = null;
 
     try {
-      const url = assetUrl('data/content.json');
-      const res = await fetch(url);
+      var url = assetUrl('data/content.json');
+      var res = await fetch(url);
       if (!res.ok) throw new Error('HTTP ' + res.status);
-      contentData = await res.json();
+      serverData = await res.json();
+      contentData = serverData;
     } catch (e) {
       loadError = e;
       contentData = { site: {}, articles: [] };
     }
 
-    const local = localStorage.getItem(STORAGE_CONTENT);
+    var local = localStorage.getItem(STORAGE_CONTENT);
     if (local) {
       try {
-        const parsed = JSON.parse(local);
-        if (parsed?.articles?.length) contentData = parsed;
-      } catch {
+        var parsed = JSON.parse(local);
+        if (parsed && parsed.articles && parsed.articles.length) {
+          contentData = parsed;
+        }
+      } catch (err) {
         /* keep server */
       }
     }
 
-    if (!contentData?.articles?.length && loadError) {
+    var jsonBinSettings = getJsonBinSettings();
+    if (jsonBinSettings.binId && jsonBinSettings.accessKey) {
+      var remote = await fetchJsonBin();
+      if (remote && remote.articles && remote.articles.length) {
+        contentData = remote;
+      }
+    }
+
+    if (!contentData || !contentData.articles || !contentData.articles.length) {
+      if (serverData && serverData.articles && serverData.articles.length) {
+        contentData = serverData;
+      }
+    }
+
+    if (!contentData || !contentData.articles || !contentData.articles.length) {
       window.Workout = window.Workout || {};
       window.Workout.loadError = loadError;
     }
