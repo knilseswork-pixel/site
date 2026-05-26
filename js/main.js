@@ -111,6 +111,8 @@
     return '';
   }
 
+  window.renderVideoBlock = renderVideoBlock;
+
   function escapeHtml(s) {
     var d = document.createElement('div');
     d.textContent = s;
@@ -269,6 +271,7 @@
     $('#detailMedia').innerHTML = '<img src="' + (window.Workout.assetUrl('logo.jpg')) + '" alt="" class="detail__hero-logo" width="80" height="80">';
 
     var bmBtn = $('#detailBookmark');
+    if (bmBtn) bmBtn.style.visibility = '';
     bmBtn.classList.toggle('is-saved', isBookmarked(id));
     bmBtn.onclick = function () {
       var now = toggleBookmark(id);
@@ -297,6 +300,8 @@
     $('#detail').setAttribute('aria-hidden', 'true');
     document.body.classList.remove('detail-open');
     openArticleId = null;
+    var bmBtn = $('#detailBookmark');
+    if (bmBtn) bmBtn.style.visibility = '';
     var ghost = $('#cardGhost');
     ghost.classList.remove('is-active');
     ghost.style.cssText = '';
@@ -357,7 +362,7 @@
     }
 
     document.addEventListener('keydown', function (e) {
-      if (e.key === 'Escape' && openArticleId) closeDetail();
+      if (e.key === 'Escape' && $('#detail').classList.contains('is-open')) closeDetail();
     });
 
     window.addEventListener('content-updated', function () {
@@ -383,7 +388,10 @@
     try {
       fixStaticAssets();
       await loadContent();
+      if (window.SectionsStore) await window.SectionsStore.loadSections();
       if (window.WorkoutAdmin) await window.WorkoutAdmin.init();
+      if (window.SectionsAdmin) window.SectionsAdmin.init();
+      if (window.SectionsUI) await window.SectionsUI.init();
       bindEvents();
       renderStats();
       renderCards();

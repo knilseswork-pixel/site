@@ -34,6 +34,7 @@ function openAdmin() {
   $('#adminPanel')?.classList.add('is-open');
   document.body.classList.add('admin-open');
   renderAdminList();
+  if (window.SectionsAdmin) window.SectionsAdmin.renderList();
 }
 
 function closeAdmin() {
@@ -50,6 +51,7 @@ function showLogin() {
 function showApp() {
   $('#adminLogin')?.classList.add('hidden');
   $('#adminApp')?.classList.remove('hidden');
+  if (window.SectionsAdmin) window.SectionsAdmin.renderList();
 }
 
 async function tryLogin(password) {
@@ -365,6 +367,9 @@ function bindAdminEvents() {
     tab.addEventListener('click', () => {
       $$('.admin-tab').forEach((t) => t.classList.toggle('is-active', t === tab));
       $$('.admin-tab-panel').forEach((p) => p.classList.toggle('hidden', p.dataset.tab !== tab.dataset.tab));
+      if (tab.dataset.tab === 'sections' && window.SectionsAdmin) {
+        window.SectionsAdmin.renderList();
+      }
     });
   });
 }

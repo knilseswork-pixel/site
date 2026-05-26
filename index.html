@@ -31,8 +31,12 @@
         <span class="header__tagline">Здоровое поколение · Sport Center</span>
       </div>
     </a>
-    <nav class="header__nav">
-      <button type="button" class="header__link is-active" data-filter="all">Все материалы</button>
+    <nav class="header__nav header__nav--views">
+      <button type="button" class="header__link is-active" data-main-view="materials">Материалы</button>
+      <button type="button" class="header__link" data-main-view="sections">База элементов</button>
+    </nav>
+    <nav class="header__nav header__nav--filters" id="headerFilters">
+      <button type="button" class="header__link is-active" data-filter="all">Все</button>
       <button type="button" class="header__link" data-filter="Уровни">Уровни</button>
       <button type="button" class="header__link" data-filter="Методика">Методика</button>
       <button type="button" class="header__link" data-filter="Разминка">Разминка</button>
@@ -55,10 +59,17 @@
       <button type="button" class="load-banner__btn" onclick="location.reload()">Обновить</button>
     </div>
 
-    <section class="grid-section">
-      <div class="grid" id="cardsGrid" role="list"></div>
-      <p class="grid-empty hidden" id="gridEmpty">Ничего не найдено. Попробуйте другой запрос.</p>
-    </section>
+    <div id="viewMaterials">
+      <section class="grid-section">
+        <div class="grid" id="cardsGrid" role="list"></div>
+        <p class="grid-empty hidden" id="gridEmpty">Ничего не найдено. Попробуйте другой запрос.</p>
+      </section>
+    </div>
+
+    <div id="viewSections" class="hidden">
+      <p class="sections-intro">Статические, динамические элементы, ОФП, СФП и другие блоки методики. Нажмите на карточку уровня.</p>
+      <div id="sectionsRoot"></div>
+    </div>
   </main>
 
   <!-- Detail overlay -->
@@ -124,6 +135,7 @@
       <div id="adminApp" class="admin-app hidden">
         <nav class="admin-tabs">
           <button type="button" class="admin-tab is-active" data-tab="materials">Материалы</button>
+          <button type="button" class="admin-tab" data-tab="sections">Разделы</button>
           <button type="button" class="admin-tab" data-tab="publish">Публикация</button>
           <button type="button" class="admin-tab" data-tab="settings">Настройки</button>
         </nav>
@@ -160,12 +172,29 @@
           </div>
         </div>
 
+        <div class="admin-tab-panel hidden" data-tab="sections">
+          <p class="admin-help">Редактирование больших блоков: статические и силовые элементы, динамические, ОФП, СФП и др.</p>
+          <ul class="admin-sections-list" id="adminSectionsList"></ul>
+          <div class="admin-editor hidden" id="adminSectionEditor">
+            <h3 id="adminSectionEditorTitle">Редактор раздела</h3>
+            <div id="adminSectionEditorFields"></div>
+            <div class="admin-editor__actions">
+              <button type="button" class="admin-btn admin-btn--primary" id="adminSectionSave">Сохранить</button>
+              <button type="button" class="admin-btn" id="adminSectionCancel">Отмена</button>
+            </div>
+          </div>
+        </div>
+
         <div class="admin-tab-panel hidden" data-tab="publish">
           <div class="admin-help">
-            <p><strong>GitHub Pages:</strong> нажмите «Скачать content.json» и замените файл <code>data/content.json</code> в репозитории.</p>
+            <p><strong>GitHub Pages:</strong> скачайте JSON и замените файлы в репозитории: <code>data/content.json</code> и <code>data/sections.json</code>.</p>
             <p><strong>Для всех сразу (облако):</strong> зарегистрируйтесь на <a href="https://jsonbin.io" target="_blank" rel="noopener">jsonbin.io</a>, создайте bin и укажите ключи во вкладке «Настройки».</p>
           </div>
           <button type="button" class="admin-btn admin-btn--primary" id="adminDownload">Скачать content.json</button>
+          <button type="button" class="admin-btn admin-btn--primary" id="adminDownloadSections">Скачать sections.json</button>
+          <button type="button" class="admin-btn" id="adminImportSections">Импорт sections.json</button>
+          <input type="file" id="adminImportSectionsFile" accept=".json" hidden>
+          <button type="button" class="admin-btn admin-btn--danger" id="adminResetSections">Сбросить разделы (локально)</button>
           <button type="button" class="admin-btn" id="adminPublishCloud">Опубликовать в облако</button>
           <button type="button" class="admin-btn" id="adminImport">Импорт из файла</button>
           <input type="file" id="adminImportFile" accept=".json" hidden>
@@ -190,8 +219,12 @@
   <div class="admin-toast" id="adminToast"></div>
 
   <script src="js/content-data.js"></script>
+  <script src="js/sections-data.js"></script>
   <script src="js/content-store.js"></script>
+  <script src="js/sections-store.js"></script>
   <script src="js/admin.js"></script>
+  <script src="js/sections-admin.js"></script>
   <script src="js/main.js"></script>
+  <script src="js/sections-ui.js"></script>
 </body>
 </html>
