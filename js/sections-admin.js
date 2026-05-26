@@ -64,7 +64,11 @@
     var data = SS.getSectionsData();
     if (!data) return;
 
+    var hidden = ['competition', 'new-client'];
     list.innerHTML = (data.sections || [])
+      .filter(function (sec) {
+        return hidden.indexOf(sec.id) < 0;
+      })
       .map(function (sec) {
         var items = (window.WorkoutLevelSort ? window.WorkoutLevelSort.sortByLevel(sec.items || []) : sec.items || [])
           .map(function (item) {

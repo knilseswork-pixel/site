@@ -148,7 +148,51 @@
       window.Workout.loadError = loadError;
     }
 
+    migrateSectionsToArticles();
     return contentData;
+  }
+
+  function migrateSectionsToArticles() {
+    if (!contentData || !contentData.articles) return;
+    var idMap = {
+      rules: 'comp-rules',
+      admission: 'comp-admission',
+      spotting: 'comp-spotting',
+      'trial-workout': 'client-trial-workout',
+      'trial-month': 'client-trial-month',
+      interaction: 'client-interaction',
+    };
+    var sources = [];
+
+    try {
+      var local = localStorage.getItem('workout_sections_data');
+      if (local) sources.push(JSON.parse(local));
+    } catch (e) {
+      /* ignore */
+    }
+    if (window.WORKOUT_SECTIONS) sources.push(window.WORKOUT_SECTIONS);
+
+    sources.forEach(function (data) {
+      (data.sections || []).forEach(function (sec) {
+        if (sec.id !== 'competition' && sec.id !== 'new-client') return;
+        (sec.items || []).forEach(function (item) {
+          var articleId = idMap[item.id];
+          if (!articleId) return;
+          var art = contentData.articles.find(function (a) {
+            return a.id === articleId;
+          });
+          if (!art) return;
+          var desc = String(item.description || '').trim();
+          if (desc && (!art.body || !art.body.length)) {
+            art.body = [desc];
+          }
+          if (item.photo && !art.photo) art.photo = item.photo;
+          if (desc && (!art.excerpt || !art.excerpt.trim())) {
+            art.excerpt = desc.length > 140 ? desc.slice(0, 137) + '…' : desc;
+          }
+        });
+      });
+    });
   }
 
   function saveContentLocal(data) {

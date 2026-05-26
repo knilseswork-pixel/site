@@ -284,56 +284,6 @@ window.WORKOUT_SECTIONS = {
           ]
         }
       ]
-    },
-    {
-      "id": "competition",
-      "title": "Подготовка к соревнованиям",
-      "template": "simple-block",
-      "items": [
-        {
-          "id": "rules",
-          "title": "Правила подготовки выступления",
-          "photo": "",
-          "description": ""
-        },
-        {
-          "id": "admission",
-          "title": "Допуск к соревнованиям",
-          "photo": "",
-          "description": ""
-        },
-        {
-          "id": "spotting",
-          "title": "Страховка во время выступления",
-          "photo": "",
-          "description": ""
-        }
-      ]
-    },
-    {
-      "id": "new-client",
-      "title": "Новый клиент",
-      "template": "simple-block",
-      "items": [
-        {
-          "id": "trial-workout",
-          "title": "Пробная тренировка",
-          "photo": "",
-          "description": ""
-        },
-        {
-          "id": "trial-month",
-          "title": "Пробный месяц",
-          "photo": "",
-          "description": ""
-        },
-        {
-          "id": "interaction",
-          "title": "Взаимодействие с новым клиентом",
-          "photo": "",
-          "description": ""
-        }
-      ]
     }
   ]
 };

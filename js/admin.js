@@ -22,7 +22,7 @@
   const $ = (sel, root = document) => root.querySelector(sel);
   const $$ = (sel, root = document) => Array.prototype.slice.call(root.querySelectorAll(sel));
 
-  const CATEGORIES = ['Уровни', 'Методика', 'Разминка'];
+  const CATEGORIES = ['Уровни', 'Методика', 'Разминка', 'Соревнования', 'Клиенты'];
 
 let editingId = null;
 

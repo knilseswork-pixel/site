@@ -46,11 +46,15 @@
     return 'Нажмите, чтобы открыть и заполнить';
   }
 
+  var SECTIONS_IN_MATERIALS = ['competition', 'new-client'];
+
   function renderSectionsList() {
     var root = $('#sectionsRoot');
     if (!root) return;
     var data = SS.getSectionsData();
-    var sections = data.sections || [];
+    var sections = (data.sections || []).filter(function (sec) {
+      return SECTIONS_IN_MATERIALS.indexOf(sec.id) < 0;
+    });
 
     root.innerHTML = sections
       .map(function (sec) {

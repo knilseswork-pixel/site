@@ -1,3 +1,4 @@
+/* Auto-generated from data/content.json */
 window.WORKOUT_CONTENT = {
   "site": {
     "title": "WORKOUT Sport Center",
@@ -300,6 +301,72 @@ window.WORKOUT_CONTENT = {
           "embed": "https://vk.com/video_ext.php?oid=-221421435&id=456239032&hash=9d931ff7df862718"
         }
       ]
+    },
+    {
+      "id": "comp-rules",
+      "title": "Правила подготовки выступления",
+      "excerpt": "Подготовка к соревнованиям: правила и организация выступления.",
+      "date": "2024-01-12",
+      "views": 0,
+      "category": "Соревнования",
+      "accent": "#FF2D2D",
+      "body": [],
+      "videos": []
+    },
+    {
+      "id": "comp-admission",
+      "title": "Допуск к соревнованиям",
+      "excerpt": "Требования и порядок допуска атлетов к соревнованиям.",
+      "date": "2024-01-12",
+      "views": 0,
+      "category": "Соревнования",
+      "accent": "#FF2D2D",
+      "body": [],
+      "videos": []
+    },
+    {
+      "id": "comp-spotting",
+      "title": "Страховка во время выступления",
+      "excerpt": "Страховка атлета во время соревновательного выступления.",
+      "date": "2024-01-12",
+      "views": 0,
+      "category": "Соревнования",
+      "accent": "#FF2D2D",
+      "body": [],
+      "videos": []
+    },
+    {
+      "id": "client-trial-workout",
+      "title": "Пробная тренировка",
+      "excerpt": "Проведение пробной тренировки для нового клиента.",
+      "date": "2024-01-12",
+      "views": 0,
+      "category": "Клиенты",
+      "accent": "#FF2D2D",
+      "body": [],
+      "videos": []
+    },
+    {
+      "id": "client-trial-month",
+      "title": "Пробный месяц",
+      "excerpt": "Организация пробного месяца занятий для нового клиента.",
+      "date": "2024-01-12",
+      "views": 0,
+      "category": "Клиенты",
+      "accent": "#FF2D2D",
+      "body": [],
+      "videos": []
+    },
+    {
+      "id": "client-interaction",
+      "title": "Взаимодействие с новым клиентом",
+      "excerpt": "Коммуникация и сопровождение нового клиента в центре.",
+      "date": "2024-01-12",
+      "views": 0,
+      "category": "Клиенты",
+      "accent": "#FF2D2D",
+      "body": [],
+      "videos": []
     }
   ]
 };
