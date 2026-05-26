@@ -1,11 +1,12 @@
 /**
  * WORKOUT Sport Center — interactive materials library
- * Content: data/content.json (built from Word via scripts/build-content.py)
  */
+
+import { getContentData, loadContent } from './content-store.js';
+import { initAdmin } from './admin.js';
 
 const STORAGE_BOOKMARKS = 'workout_bookmarks';
 
-let contentData = null;
 let activeFilter = 'all';
 let searchQuery = '';
 let openArticleId = null;
@@ -46,6 +47,7 @@ function isBookmarked(id) {
 
 function videoSrc(path) {
   if (!path) return '';
+  if (/^https?:\/\//i.test(path)) return path;
   return path
     .split('/')
     .map((part, i) => (i === 0 ? part : encodeURIComponent(part)))
@@ -95,6 +97,7 @@ function markdownLite(text) {
 }
 
 function getFilteredArticles() {
+  const contentData = getContentData();
   if (!contentData?.articles) return [];
   return contentData.articles.filter((a) => {
     const matchFilter = activeFilter === 'all' || a.category === activeFilter;
@@ -109,6 +112,7 @@ function getFilteredArticles() {
 }
 
 function renderStats() {
+  const contentData = getContentData();
   const articles = contentData?.articles || [];
   const el = $('#heroStats');
   if (!el) return;
@@ -174,6 +178,7 @@ function renderCards() {
 }
 
 function openDetail(id, sourceCard) {
+  const contentData = getContentData();
   const article = contentData.articles.find((a) => a.id === id);
   if (!article) return;
 
@@ -186,9 +191,7 @@ function openDetail(id, sourceCard) {
   $('#detailMeta').textContent = formatDate(article.date);
 
   const contentEl = $('#detailContent');
-  contentEl.innerHTML = (article.body || [])
-    .map((p) => markdownLite(p))
-    .join('');
+  contentEl.innerHTML = (article.body || []).map((p) => markdownLite(p)).join('');
 
   const videosEl = $('#detailVideos');
   const videos = article.videos || [];
@@ -211,7 +214,8 @@ function openDetail(id, sourceCard) {
     renderStats();
   };
 
-  if (sourceCard) runFlipTransition(sourceCard);
+  const useFlip = window.innerWidth >= 768 && sourceCard;
+  if (useFlip) runFlipTransition(sourceCard);
 
   detail.classList.add('is-open');
   detail.setAttribute('aria-hidden', 'false');
@@ -291,23 +295,21 @@ function bindEvents() {
   });
 
   document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape' && openArticleId) closeDetail();
+    if (e.key === 'Escape') {
+      if (openArticleId) closeDetail();
+    }
   });
-}
 
-async function loadContent() {
-  try {
-    const res = await fetch('data/content.json');
-    if (!res.ok) throw new Error('fetch failed');
-    contentData = await res.json();
-  } catch {
-    console.warn('Using inline fallback — run scripts/build-content.py');
-    contentData = { articles: [] };
-  }
+  window.addEventListener('content-updated', () => {
+    if (openArticleId) closeDetail();
+    renderStats();
+    renderCards();
+  });
 }
 
 async function init() {
   await loadContent();
+  await initAdmin();
   bindEvents();
   renderStats();
   renderCards();
