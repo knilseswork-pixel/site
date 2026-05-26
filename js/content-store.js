@@ -11,6 +11,142 @@
   let contentData = null;
   let adminConfig = null;
 
+  var HUB_ARTICLE_IDS = ['competition-hub', 'new-client-hub'];
+
+  var HUB_ARTICLES_FALLBACK = [
+    {
+      id: 'competition-hub',
+      title: 'Подготовка к соревнованиям',
+      excerpt: 'Правила подготовки выступления · допуск · страховка',
+      date: '2024-01-12',
+      views: 0,
+      category: 'Соревнования',
+      type: 'hub',
+      accent: '#FF2D2D',
+      body: [],
+      videos: [],
+      items: [
+        { id: 'rules', title: 'Правила подготовки выступления', body: [], videos: [] },
+        { id: 'admission', title: 'Допуск к соревнованиям', body: [], videos: [] },
+        { id: 'spotting', title: 'Страховка во время выступления', body: [], videos: [] },
+      ],
+    },
+    {
+      id: 'new-client-hub',
+      title: 'Новый клиент',
+      excerpt: 'Пробная тренировка · пробный месяц · взаимодействие',
+      date: '2024-01-12',
+      views: 0,
+      category: 'Клиенты',
+      type: 'hub',
+      accent: '#FF2D2D',
+      body: [],
+      videos: [],
+      items: [
+        {
+          id: 'trial-workout',
+          title: 'Пробная тренировка',
+          body: [
+            'Не стоит забывать и про новых клиентов. Для них мы разработали определённые правила проведения пробной тренировки.',
+            'На пробном занятии тренер знакомится с ребёнком, оценивает уровень подготовки, показывает формат занятий и даёт безопасную нагрузку без перегруза.',
+          ],
+          videos: [],
+        },
+        {
+          id: 'trial-month',
+          title: 'Пробный месяц',
+          body: [
+            'При покупке пробного месяца у нового клиента уже есть тренировочное расписание на 8 тренировок с разными темами.',
+            'Так ребёнок проходит основные направления методики центра и родители видят систему занятий до оформления абонемента.',
+          ],
+          videos: [],
+        },
+        {
+          id: 'interaction',
+          title: 'Взаимодействие с новым клиентом',
+          body: [
+            'Не стоит забывать и про новых клиентов — выстраивайте доверие с первого контакта: консультация, правила центра, безопасность и понятные ожидания от занятий.',
+          ],
+          videos: [],
+        },
+      ],
+    },
+  ];
+
+  function cloneData(obj) {
+    return JSON.parse(JSON.stringify(obj));
+  }
+
+  function getHubTemplates(fallbackSource) {
+    var fromEmbed = window.WORKOUT_CONTENT && window.WORKOUT_CONTENT.articles;
+    var list = (fromEmbed || [])
+      .filter(function (a) {
+        return HUB_ARTICLE_IDS.indexOf(a.id) >= 0;
+      })
+      .map(cloneData);
+    if (list.length >= 2) return list;
+
+    if (fallbackSource && fallbackSource.articles) {
+      list = fallbackSource.articles
+        .filter(function (a) {
+          return HUB_ARTICLE_IDS.indexOf(a.id) >= 0;
+        })
+        .map(cloneData);
+      if (list.length >= 2) return list;
+    }
+
+    return HUB_ARTICLES_FALLBACK.map(cloneData);
+  }
+
+  function mergeHubItemBodies(targetItems, sourceItems) {
+    (sourceItems || []).forEach(function (src) {
+      var tgt = (targetItems || []).find(function (it) {
+        return it.id === src.id;
+      });
+      if (!tgt) {
+        targetItems.push(cloneData(src));
+        return;
+      }
+      var hasBody =
+        tgt.body &&
+        tgt.body.length &&
+        tgt.body.some(function (p) {
+          return String(p || '').trim().length > 0;
+        });
+      if (!hasBody && src.body && src.body.length) {
+        tgt.body = src.body.slice();
+      }
+      if ((!tgt.videos || !tgt.videos.length) && src.videos && src.videos.length) {
+        tgt.videos = src.videos.slice();
+      }
+    });
+  }
+
+  function ensureHubArticles(fallbackSource) {
+    if (!contentData || !contentData.articles) return;
+    var templates = getHubTemplates(fallbackSource);
+
+    templates.forEach(function (tpl) {
+      var idx = contentData.articles.findIndex(function (a) {
+        return a.id === tpl.id;
+      });
+      if (idx < 0) {
+        contentData.articles.push(cloneData(tpl));
+        return;
+      }
+      var existing = contentData.articles[idx];
+      if (existing.type !== 'hub' || !existing.items || !existing.items.length) {
+        contentData.articles[idx] = cloneData(tpl);
+        return;
+      }
+      existing.category = tpl.category;
+      existing.title = existing.title || tpl.title;
+      existing.type = 'hub';
+      if (!existing.excerpt) existing.excerpt = tpl.excerpt;
+      mergeHubItemBodies(existing.items, tpl.items);
+    });
+  }
+
   function assetUrl(path) {
     return window.Workout?.assetUrl ? window.Workout.assetUrl(path) : path;
   }
@@ -115,18 +251,27 @@
       contentData = { site: {}, articles: [] };
     }
 
-    var local = localStorage.getItem(STORAGE_CONTENT);
-    if (local) {
-      try {
-        var parsed = JSON.parse(local);
-        if (parsed && parsed.articles && parsed.articles.length) {
-          contentData = parsed;
-        } else {
+    var useDraft =
+      window.SiteConfigStore && window.SiteConfigStore.isDraftEnabled
+        ? window.SiteConfigStore.isDraftEnabled()
+        : localStorage.getItem('workout_site_draft_enabled') === '1';
+
+    if (useDraft) {
+      var local = localStorage.getItem(STORAGE_CONTENT);
+      if (local) {
+        try {
+          var parsed = JSON.parse(local);
+          if (parsed && parsed.articles && parsed.articles.length) {
+            contentData = parsed;
+          } else {
+            localStorage.removeItem(STORAGE_CONTENT);
+          }
+        } catch (err) {
           localStorage.removeItem(STORAGE_CONTENT);
         }
-      } catch (err) {
-        localStorage.removeItem(STORAGE_CONTENT);
       }
+    } else {
+      localStorage.removeItem(STORAGE_CONTENT);
     }
 
     var jsonBinSettings = getJsonBinSettings();
@@ -148,8 +293,10 @@
       window.Workout.loadError = loadError;
     }
 
+    ensureHubArticles(serverData);
     migrateSectionsToArticles();
     mergeLegacyHubArticles();
+    ensureHubArticles(serverData);
     return contentData;
   }
 
@@ -296,11 +443,21 @@
 
   function saveContentLocal(data) {
     contentData = data;
-    localStorage.setItem(STORAGE_CONTENT, JSON.stringify(data));
+    ensureHubArticles(window.WORKOUT_CONTENT || null);
+    if (window.SiteConfigStore && window.SiteConfigStore.setDraftEnabled) {
+      window.SiteConfigStore.setDraftEnabled(true);
+    }
+    localStorage.setItem(STORAGE_CONTENT, JSON.stringify(contentData));
   }
 
   function clearContentLocal() {
     localStorage.removeItem(STORAGE_CONTENT);
+  }
+
+  function setDraftEnabled(value) {
+    if (window.SiteConfigStore && window.SiteConfigStore.setDraftEnabled) {
+      window.SiteConfigStore.setDraftEnabled(value);
+    }
   }
 
   async function publishToJsonBin(data) {
@@ -380,5 +537,6 @@
     importContentFromFile,
     slugId,
     assetUrl,
+    setDraftEnabled,
   };
 })();

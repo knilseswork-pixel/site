@@ -28,16 +28,25 @@
 
     sectionsData = serverData || { sections: [] };
 
-    var local = localStorage.getItem(STORAGE_SECTIONS);
-    if (local) {
-      try {
-        var parsed = JSON.parse(local);
-        if (parsed && parsed.sections && parsed.sections.length) {
-          sectionsData = parsed;
+    var useDraft =
+      window.SiteConfigStore && window.SiteConfigStore.isDraftEnabled
+        ? window.SiteConfigStore.isDraftEnabled()
+        : false;
+
+    if (useDraft) {
+      var local = localStorage.getItem(STORAGE_SECTIONS);
+      if (local) {
+        try {
+          var parsed = JSON.parse(local);
+          if (parsed && parsed.sections && parsed.sections.length) {
+            sectionsData = parsed;
+          }
+        } catch (e) {
+          localStorage.removeItem(STORAGE_SECTIONS);
         }
-      } catch (e) {
-        localStorage.removeItem(STORAGE_SECTIONS);
       }
+    } else {
+      localStorage.removeItem(STORAGE_SECTIONS);
     }
 
     return sectionsData;
@@ -49,6 +58,9 @@
 
   function saveSectionsLocal(data) {
     sectionsData = data;
+    if (window.SiteConfigStore && window.SiteConfigStore.setDraftEnabled) {
+      window.SiteConfigStore.setDraftEnabled(true);
+    }
     localStorage.setItem(STORAGE_SECTIONS, JSON.stringify(data));
   }
 

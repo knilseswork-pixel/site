@@ -1624,6 +1624,84 @@ body.detail-open .bottom-bar {
   margin-right: 8px;
 }
 
+/* Конструктор сайта */
+.builder-section {
+  margin-bottom: 24px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--border);
+}
+
+.builder-section h3 {
+  font-size: 1rem;
+  margin: 0 0 12px;
+}
+
+.builder-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 8px;
+  align-items: center;
+}
+
+.builder-row input,
+.builder-row select {
+  flex: 1;
+  min-width: 120px;
+  font-family: inherit;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+}
+
+.builder-draft {
+  padding: 12px;
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.04);
+  margin-bottom: 16px;
+  font-size: 0.875rem;
+}
+
+.builder-draft--on {
+  background: rgba(255, 45, 45, 0.12);
+  border: 1px solid rgba(255, 45, 45, 0.35);
+}
+
+.builder-steps {
+  margin: 0 0 16px 1.2em;
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+}
+
+.builder-steps li {
+  margin-bottom: 6px;
+}
+
+.builder-page,
+.builder-block {
+  margin: 12px 0;
+  padding: 12px;
+  border: 1px dashed var(--border);
+  border-radius: var(--radius-sm);
+}
+
+.builder-page h4 {
+  margin: 0 0 10px;
+}
+
+.builder-block textarea,
+.builder-hub-item textarea {
+  width: 100%;
+  margin-top: 8px;
+  font-family: inherit;
+}
+
+.builder-section--publish .admin-btn {
+  margin: 6px 6px 6px 0;
+}
+
 .admin-sections-list {
   list-style: none;
   margin: 0;

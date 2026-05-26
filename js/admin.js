@@ -120,6 +120,9 @@ function openEditor(id = null) {
   $('#editorTitle').value = article?.title || '';
   $('#editorExcerpt').value = article?.excerpt || '';
   $('#editorDate').value = article?.date || new Date().toISOString().slice(0, 10);
+  if (window.WorkoutMain && window.WorkoutMain.populateCategorySelect) {
+    window.WorkoutMain.populateCategorySelect();
+  }
   $('#editorCategory').value = article?.category || 'Уровни';
   $('#editorBody').value = (article?.body || []).join('\n\n');
   $('#editorVideos').value = formatVideosForEditor(article?.videos || []);
@@ -389,6 +392,13 @@ function bindAdminEvents() {
   $('#editorCancel')?.addEventListener('click', hideEditor);
   $('#editorSave')?.addEventListener('click', saveArticle);
 
+  $('#adminDownloadConfig')?.addEventListener('click', () => {
+    if (window.SiteConfigStore) {
+      window.SiteConfigStore.downloadSiteConfigJson(window.SiteConfigStore.getSiteConfig());
+      showToast('site-config.json скачан');
+    }
+  });
+
   $('#adminDownload')?.addEventListener('click', () => {
     downloadContentJson();
     showToast('Файл content.json скачан — загрузите в GitHub');
@@ -410,10 +420,20 @@ function bindAdminEvents() {
   });
 
   $('#adminReset')?.addEventListener('click', async () => {
-    if (!confirm('Сбросить локальные изменения и загрузить с сервера?')) return;
-    clearContentLocal();
+    if (!confirm('Сбросить черновик и загрузить данные с GitHub?')) return;
+    if (window.SiteConfigStore) window.SiteConfigStore.clearAllDrafts();
+    else clearContentLocal();
     await loadContent();
+    if (window.SiteConfigStore) await window.SiteConfigStore.loadSiteConfig();
+    if (window.SectionsStore) await window.SectionsStore.loadSections();
+    if (window.SiteNav) {
+      window.SiteNav.renderMainTabs();
+      window.SiteNav.renderFilters();
+      window.SiteNav.renderAllCustomViews();
+      window.SiteNav.applyHero();
+    }
     notifyContentUpdated();
+    window.dispatchEvent(new CustomEvent('site-config-updated'));
     renderAdminList();
     showToast('Загружено с сервера');
   });
@@ -428,6 +448,9 @@ function bindAdminEvents() {
       $$('.admin-tab-panel').forEach((p) => p.classList.toggle('hidden', p.dataset.tab !== tab.dataset.tab));
       if (tab.dataset.tab === 'sections' && window.SectionsAdmin) {
         window.SectionsAdmin.renderList();
+      }
+      if (tab.dataset.tab === 'builder' && window.SiteBuilder) {
+        window.SiteBuilder.render();
       }
     });
   });

@@ -370,20 +370,11 @@
     if (view === 'sections') renderSectionsList();
   }
 
-  function bindViewSwitch() {
-    document.querySelectorAll('[data-main-view]').forEach(function (btn) {
-      btn.addEventListener('click', function () {
-        setView(btn.dataset.mainView);
-      });
-    });
-  }
-
   async function init() {
     await SS.loadSections();
-    bindViewSwitch();
     renderSectionsList();
     window.addEventListener('sections-updated', renderSectionsList);
   }
 
-  window.SectionsUI = { init: init, setView: setView, renderSectionsList: renderSectionsList };
+  window.SectionsUI = { init: init, renderSectionsList: renderSectionsList };
 })();

@@ -453,16 +453,37 @@
     }, 650);
   }
 
-  function bindEvents() {
-    $$('[data-filter]').forEach(function (btn) {
-      btn.addEventListener('click', function () {
-        activeFilter = btn.dataset.filter;
-        $$('[data-filter]').forEach(function (b) {
-          b.classList.toggle('is-active', b === btn);
-        });
-        renderCards();
+  function populateCategorySelect() {
+    var sel = document.getElementById('editorCategory');
+    if (!sel) return;
+    var cats = [];
+    if (window.SiteConfigStore && window.SiteConfigStore.getCategories) {
+      cats = window.SiteConfigStore.getCategories();
+    }
+    if (!cats.length) {
+      cats = ['Уровни', 'Методика', 'Разминка', 'Соревнования', 'Клиенты'];
+    }
+    sel.innerHTML = cats
+      .map(function (c) {
+        return '<option>' + escapeHtml(c) + '</option>';
+      })
+      .join('');
+  }
+
+  function bindFilterEvents() {
+    document.addEventListener('click', function (e) {
+      var btn = e.target.closest('[data-filter]');
+      if (!btn || !btn.closest('#headerFilters')) return;
+      activeFilter = btn.dataset.filter;
+      $$('[data-filter]').forEach(function (b) {
+        b.classList.toggle('is-active', b === btn);
       });
+      renderCards();
     });
+  }
+
+  function bindEvents() {
+    bindFilterEvents();
 
     var search = $('#searchInput');
     if (search) {
@@ -494,7 +515,19 @@
       renderStats();
       renderCards();
     });
+
+    window.addEventListener('site-config-updated', function () {
+      populateCategorySelect();
+      if (openArticleId) closeDetail();
+      renderCards();
+    });
   }
+
+  window.WorkoutMain = {
+    renderCards: renderCards,
+    renderStats: renderStats,
+    populateCategorySelect: populateCategorySelect,
+  };
 
   function fixStaticAssets() {
     if (!window.Workout || !window.Workout.assetUrl) return;
@@ -511,12 +544,16 @@
   async function init() {
     try {
       fixStaticAssets();
+      if (window.SiteConfigStore) await window.SiteConfigStore.loadSiteConfig();
       await loadContent();
       if (window.SectionsStore) await window.SectionsStore.loadSections();
+      if (window.SiteNav) await window.SiteNav.init();
       if (window.WorkoutAdmin) await window.WorkoutAdmin.init();
       if (window.SectionsAdmin) window.SectionsAdmin.init();
+      if (window.SiteBuilder) window.SiteBuilder.init();
       if (window.SectionsUI) await window.SectionsUI.init();
       bindEvents();
+      populateCategorySelect();
       renderStats();
       renderCards();
     } catch (e) {
