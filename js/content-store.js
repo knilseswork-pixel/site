@@ -89,14 +89,29 @@
     let loadError = null;
     var serverData = null;
 
-    try {
-      var url = assetUrl('data/content.json');
-      var res = await fetch(url);
-      if (!res.ok) throw new Error('HTTP ' + res.status);
-      serverData = await res.json();
+    var urls = [
+      assetUrl('data/content.json'),
+      assetUrl('data/content.json') + '?t=' + Date.now(),
+    ];
+
+    for (var u = 0; u < urls.length && !serverData; u++) {
+      try {
+        var res = await fetch(urls[u], { cache: 'no-store' });
+        if (!res.ok) continue;
+        serverData = await res.json();
+        contentData = serverData;
+      } catch (e) {
+        loadError = e;
+      }
+    }
+
+    if (!serverData && window.WORKOUT_CONTENT && window.WORKOUT_CONTENT.articles) {
+      serverData = window.WORKOUT_CONTENT;
       contentData = serverData;
-    } catch (e) {
-      loadError = e;
+      loadError = null;
+    }
+
+    if (!contentData) {
       contentData = { site: {}, articles: [] };
     }
 
@@ -106,9 +121,11 @@
         var parsed = JSON.parse(local);
         if (parsed && parsed.articles && parsed.articles.length) {
           contentData = parsed;
+        } else {
+          localStorage.removeItem(STORAGE_CONTENT);
         }
       } catch (err) {
-        /* keep server */
+        localStorage.removeItem(STORAGE_CONTENT);
       }
     }
 

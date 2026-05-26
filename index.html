@@ -37,16 +37,8 @@
       <button type="button" class="header__link" data-filter="Методика">Методика</button>
       <button type="button" class="header__link" data-filter="Разминка">Разминка</button>
     </nav>
-    <div class="header__actions">
-      <button type="button" class="header__admin" data-admin-open aria-label="Админ-панель" title="Админ-панель">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-          <circle cx="12" cy="12" r="3"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>
-        </svg>
-        <span class="header__admin-text">Админ</span>
-      </button>
-      <div class="header__search-wrap">
-        <input type="search" class="header__search" placeholder="Поиск…" autocomplete="off" id="searchInput">
-      </div>
+    <div class="header__search-wrap">
+      <input type="search" class="header__search" placeholder="Поиск по материалам…" autocomplete="off" id="searchInput">
     </div>
   </header>
 
@@ -99,14 +91,16 @@
   <footer class="footer">
     <img src="logo.jpg" alt="" class="footer__logo" width="40" height="40">
     <p>© WORKOUT Sport Center · Здоровое поколение · 2016</p>
-    <button type="button" class="footer__admin" data-admin-open aria-label="Панель администратора">Админ-панель</button>
   </footer>
 
-  <button type="button" class="admin-fab" data-admin-open aria-label="Открыть админ-панель" title="Админ">
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-      <circle cx="12" cy="12" r="3"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>
-    </svg>
-  </button>
+  <div class="bottom-bar">
+    <button type="button" class="bottom-bar__admin" data-admin-open aria-label="Панель администратора">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+        <circle cx="12" cy="12" r="3"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>
+      </svg>
+      Админ-панель
+    </button>
+  </div>
 
   <!-- Admin panel -->
   <div class="admin" id="adminPanel" aria-hidden="true">
@@ -195,6 +189,7 @@
   </div>
   <div class="admin-toast" id="adminToast"></div>
 
+  <script src="js/content-data.js"></script>
   <script src="js/content-store.js"></script>
   <script src="js/admin.js"></script>
   <script src="js/main.js"></script>
