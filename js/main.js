@@ -135,17 +135,120 @@
     return '<p>' + html + '</p>';
   }
 
+  function isHubArticle(article) {
+    return article && article.type === 'hub' && article.items && article.items.length;
+  }
+
+  function hubItemMatchesSearch(item, q) {
+    if (!q) return true;
+    var t = (item.title || '').toLowerCase();
+    var body = (item.body || []).join(' ').toLowerCase();
+    return t.indexOf(q) >= 0 || body.indexOf(q) >= 0;
+  }
+
+  function articleMatchesSearch(article, q) {
+    if (!q) return true;
+    if (
+      article.title.toLowerCase().indexOf(q) >= 0 ||
+      article.excerpt.toLowerCase().indexOf(q) >= 0 ||
+      article.category.toLowerCase().indexOf(q) >= 0
+    ) {
+      return true;
+    }
+    if (isHubArticle(article)) {
+      return article.items.some(function (item) {
+        return hubItemMatchesSearch(item, q);
+      });
+    }
+    return false;
+  }
+
+  function renderHubLevel(article) {
+    var btns = (article.items || [])
+      .map(function (item) {
+        return (
+          '<button type="button" class="gpp-group-btn hub-topic-btn" data-hub-item-id="' +
+          escapeHtml(item.id) +
+          '">' +
+          '<span class="gpp-group-btn__label">' +
+          escapeHtml(item.title) +
+          '</span></button>'
+        );
+      })
+      .join('');
+    return (
+      '<div class="gpp-level-ui hub-materials-ui">' +
+      '<p class="gpp-level-ui__hint">Выберите раздел:</p>' +
+      '<div class="gpp-groups hub-topics">' +
+      btns +
+      '</div>' +
+      '<div class="gpp-exercise-view hub-item-view hidden"></div>' +
+      '</div>'
+    );
+  }
+
+  function renderHubItemContent(item) {
+    var html =
+      '<div class="gpp-exercise-detail">' +
+      '<button type="button" class="gpp-back hub-back-topics">← К разделам</button>' +
+      '<h3 class="gpp-exercise-detail__title">' +
+      escapeHtml(item.title) +
+      '</h3>' +
+      '<div class="prose hub-item-body">';
+    if (item.body && item.body.length) {
+      html += item.body.map(markdownLite).join('');
+    } else {
+      html += '<p>Текст пока не добавлен. Заполните в админ-панели.</p>';
+    }
+    html += '</div></div>';
+    return html;
+  }
+
+  function bindHubNav(container, article) {
+    var topicsEl = container.querySelector('.hub-topics');
+    var viewEl = container.querySelector('.hub-item-view');
+
+    function showTopics() {
+      topicsEl.classList.remove('hidden');
+      viewEl.classList.add('hidden');
+      viewEl.innerHTML = '';
+    }
+
+    topicsEl.querySelectorAll('.hub-topic-btn').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var item = (article.items || []).find(function (it) {
+          return it.id === btn.dataset.hubItemId;
+        });
+        if (!item) return;
+        topicsEl.classList.add('hidden');
+        viewEl.classList.remove('hidden');
+        viewEl.innerHTML = renderHubItemContent(item);
+        var videos = item.videos || [];
+        var videosEl = $('#detailVideos');
+        if (videos.length && window.renderVideoBlock) {
+          videosEl.innerHTML = videos.map(renderVideoBlock).join('');
+          videosEl.hidden = false;
+        } else {
+          videosEl.innerHTML = '';
+          videosEl.hidden = true;
+        }
+        viewEl.querySelector('.hub-back-topics').addEventListener('click', function () {
+          videosEl.innerHTML = '';
+          videosEl.hidden = true;
+          showTopics();
+        });
+        viewEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      });
+    });
+  }
+
   function getFilteredArticles() {
     var data = getContentData();
     if (!data || !data.articles) return [];
+    var q = searchQuery.toLowerCase().trim();
     var list = data.articles.filter(function (a) {
       var matchFilter = activeFilter === 'all' || a.category === activeFilter;
-      var q = searchQuery.toLowerCase().trim();
-      var matchSearch = !q ||
-        a.title.toLowerCase().indexOf(q) >= 0 ||
-        a.excerpt.toLowerCase().indexOf(q) >= 0 ||
-        a.category.toLowerCase().indexOf(q) >= 0;
-      return matchFilter && matchSearch;
+      return matchFilter && articleMatchesSearch(a, q);
     });
     if (!window.WorkoutLevelSort) return list;
     var leveled = [];
@@ -216,7 +319,13 @@
         '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/></svg></button></div>' +
         '<div class="card__body"><span class="card__category">' + escapeHtml(article.category) + '</span>' +
         '<h3 class="card__title' + underline + '">' + escapeHtml(article.title) + '</h3>' +
-        '<p class="card__excerpt">' + escapeHtml(article.excerpt) + '</p>' +
+        '<p class="card__excerpt">' +
+        escapeHtml(
+          isHubArticle(article)
+            ? (article.items || []).map(function (it) { return it.title; }).join(' · ')
+            : article.excerpt
+        ) +
+        '</p>' +
         '<p class="card__meta">' + formatDate(article.date) + '</p></div>';
 
       card.addEventListener('click', function (e) {
@@ -264,16 +373,23 @@
     $('#detailTitle').textContent = article.title;
     $('#detailMeta').textContent = formatDate(article.date);
 
-    $('#detailContent').innerHTML = (article.body || []).map(markdownLite).join('');
-
     var videosEl = $('#detailVideos');
-    var videos = article.videos || [];
-    if (videos.length) {
-      videosEl.innerHTML = videos.map(renderVideoBlock).join('');
-      videosEl.hidden = false;
-    } else {
+    if (isHubArticle(article)) {
+      $('#detailContent').innerHTML = renderHubLevel(article);
+      var hubRoot = $('#detailContent .hub-materials-ui');
+      if (hubRoot) bindHubNav(hubRoot, article);
       videosEl.innerHTML = '';
       videosEl.hidden = true;
+    } else {
+      $('#detailContent').innerHTML = (article.body || []).map(markdownLite).join('');
+      var videos = article.videos || [];
+      if (videos.length) {
+        videosEl.innerHTML = videos.map(renderVideoBlock).join('');
+        videosEl.hidden = false;
+      } else {
+        videosEl.innerHTML = '';
+        videosEl.hidden = true;
+      }
     }
 
     $('#detailMedia').innerHTML = '<img src="' + (window.Workout.assetUrl('logo.jpg')) + '" alt="" class="detail__hero-logo" width="80" height="80">';

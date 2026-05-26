@@ -149,7 +149,103 @@
     }
 
     migrateSectionsToArticles();
+    mergeLegacyHubArticles();
     return contentData;
+  }
+
+  function mergeLegacyHubArticles() {
+    if (!contentData || !contentData.articles) return;
+    var legacyComp = {
+      'comp-rules': 'rules',
+      'comp-admission': 'admission',
+      'comp-spotting': 'spotting',
+    };
+    var legacyClient = {
+      'client-trial-workout': 'trial-workout',
+      'client-trial-month': 'trial-month',
+      'client-interaction': 'interaction',
+    };
+    var compHub = contentData.articles.find(function (a) {
+      return a.id === 'competition-hub';
+    });
+    var clientHub = contentData.articles.find(function (a) {
+      return a.id === 'new-client-hub';
+    });
+    var toRemove = [];
+
+    contentData.articles.forEach(function (art) {
+      var compKey = legacyComp[art.id];
+      if (compKey && compHub && compHub.items) {
+        var cItem = compHub.items.find(function (it) {
+          return it.id === compKey;
+        });
+        if (cItem && art.body && art.body.length && (!cItem.body || !cItem.body.length)) {
+          cItem.body = art.body.slice();
+        }
+        if (cItem && art.videos && art.videos.length && (!cItem.videos || !cItem.videos.length)) {
+          cItem.videos = art.videos.slice();
+        }
+        toRemove.push(art.id);
+      }
+      var clientKey = legacyClient[art.id];
+      if (clientKey && clientHub && clientHub.items) {
+        var clItem = clientHub.items.find(function (it) {
+          return it.id === clientKey;
+        });
+        if (clItem && art.body && art.body.length && (!clItem.body || !clItem.body.length)) {
+          clItem.body = art.body.slice();
+        }
+        if (clItem && art.videos && art.videos.length && (!clItem.videos || !clItem.videos.length)) {
+          clItem.videos = art.videos.slice();
+        }
+        toRemove.push(art.id);
+      }
+    });
+
+    if (toRemove.length) {
+      contentData.articles = contentData.articles.filter(function (a) {
+        return toRemove.indexOf(a.id) < 0;
+      });
+    }
+
+    if (!compHub && toRemove.some(function (id) { return Object.prototype.hasOwnProperty.call(legacyComp, id); })) {
+      contentData.articles.push({
+        id: 'competition-hub',
+        title: 'Подготовка к соревнованиям',
+        type: 'hub',
+        category: 'Соревнования',
+        excerpt: 'Правила подготовки выступления · допуск · страховка',
+        date: '2024-01-12',
+        views: 0,
+        accent: '#FF2D2D',
+        body: [],
+        videos: [],
+        items: [
+          { id: 'rules', title: 'Правила подготовки выступления', body: [], videos: [] },
+          { id: 'admission', title: 'Допуск к соревнованиям', body: [], videos: [] },
+          { id: 'spotting', title: 'Страховка во время выступления', body: [], videos: [] },
+        ],
+      });
+    }
+    if (!clientHub && toRemove.some(function (id) { return Object.prototype.hasOwnProperty.call(legacyClient, id); })) {
+      contentData.articles.push({
+        id: 'new-client-hub',
+        title: 'Новый клиент',
+        type: 'hub',
+        category: 'Клиенты',
+        excerpt: 'Пробная тренировка · пробный месяц · взаимодействие',
+        date: '2024-01-12',
+        views: 0,
+        accent: '#FF2D2D',
+        body: [],
+        videos: [],
+        items: [
+          { id: 'trial-workout', title: 'Пробная тренировка', body: [], videos: [] },
+          { id: 'trial-month', title: 'Пробный месяц', body: [], videos: [] },
+          { id: 'interaction', title: 'Взаимодействие с новым клиентом', body: [], videos: [] },
+        ],
+      });
+    }
   }
 
   function migrateSectionsToArticles() {

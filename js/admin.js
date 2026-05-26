@@ -115,6 +115,7 @@ function openEditor(id = null) {
 
   const data = getContentData();
   const article = id ? data.articles.find((a) => a.id === id) : null;
+  const isHub = article?.type === 'hub' && article?.items?.length;
 
   $('#editorTitle').value = article?.title || '';
   $('#editorExcerpt').value = article?.excerpt || '';
@@ -122,6 +123,34 @@ function openEditor(id = null) {
   $('#editorCategory').value = article?.category || 'Уровни';
   $('#editorBody').value = (article?.body || []).join('\n\n');
   $('#editorVideos').value = formatVideosForEditor(article?.videos || []);
+
+  const hubBox = $('#editorHubItems');
+  const bodyWrap = $('#editorBodyWrap');
+  const videosWrap = $('#editorVideos')?.closest('label');
+  if (isHub && hubBox) {
+    bodyWrap?.classList.add('hidden');
+    videosWrap?.classList.add('hidden');
+    hubBox.classList.remove('hidden');
+    hubBox.innerHTML = (article.items || [])
+      .map(
+        (item, i) => `
+      <div class="admin-hub-item">
+        <h4>${escapeHtml(item.title)}</h4>
+        <label>Текст <span class="label-hint">абзацы через пустую строку</span>
+          <textarea id="hubItem${i}Body" rows="5">${escapeHtml((item.body || []).join('\n\n'))}</textarea>
+        </label>
+        <label>Видео VK <span class="label-hint">Название | ссылка</span>
+          <textarea id="hubItem${i}Videos" rows="2">${escapeHtml(formatVideosForEditor(item.videos || []))}</textarea>
+        </label>
+      </div>`
+      )
+      .join('');
+  } else {
+    bodyWrap?.classList.remove('hidden');
+    videosWrap?.classList.remove('hidden');
+    hubBox?.classList.add('hidden');
+    if (hubBox) hubBox.innerHTML = '';
+  }
 }
 
 function formatVideosForEditor(videos) {
@@ -157,6 +186,32 @@ function collectEditorData() {
   const excerpt = $('#editorExcerpt').value.trim();
   const date = $('#editorDate').value || new Date().toISOString().slice(0, 10);
   const category = $('#editorCategory').value;
+  const data = getContentData();
+  const existing = editingId ? data.articles.find((a) => a.id === editingId) : null;
+
+  if (existing?.type === 'hub' && existing.items) {
+    const items = existing.items.map((item, i) => {
+      const bodyEl = $(`#hubItem${i}Body`);
+      const videosEl = $(`#hubItem${i}Videos`);
+      return {
+        ...item,
+        body: (bodyEl?.value || '')
+          .split(/\n\n+/)
+          .map((p) => p.trim())
+          .filter(Boolean),
+        videos: parseVideosFromEditor(videosEl?.value || ''),
+      };
+    });
+    return {
+      ...existing,
+      title,
+      excerpt,
+      date,
+      category,
+      items,
+    };
+  }
+
   const body = $('#editorBody').value
     .split(/\n\n+/)
     .map((p) => p.trim())
@@ -164,7 +219,6 @@ function collectEditorData() {
   const videos = parseVideosFromEditor($('#editorVideos').value);
 
   let id = editingId || slugId(title);
-  const data = getContentData();
   if (!editingId && data.articles.some((a) => a.id === id)) {
     id = `${id}-${Date.now()}`;
   }

@@ -1593,6 +1593,33 @@ body.detail-open .bottom-bar {
   color: var(--text-muted);
 }
 
+.editor-hub-items {
+  margin-top: 12px;
+}
+
+.admin-hub-item {
+  margin-bottom: 20px;
+  padding: 14px;
+  border: 1px dashed var(--border);
+  border-radius: var(--radius-sm);
+}
+
+.admin-hub-item h4 {
+  margin: 0 0 12px;
+  font-size: 0.9375rem;
+}
+
+.hub-materials-ui .hub-topics {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.hub-topic-btn {
+  width: 100%;
+  max-width: 100%;
+}
+
 .header__nav--views {
   margin-right: 8px;
 }
