@@ -10,7 +10,14 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/main.css">
+  <script src="js/paths.js"></script>
+  <link rel="stylesheet" href="css/main.css" id="mainStylesheet">
+  <script>
+    (function () {
+      var el = document.getElementById('mainStylesheet');
+      if (el && window.Workout) el.href = window.Workout.assetUrl('css/main.css');
+    })();
+  </script>
   <link rel="icon" href="logo.jpg" type="image/jpeg">
 </head>
 <body>
@@ -30,8 +37,16 @@
       <button type="button" class="header__link" data-filter="Методика">Методика</button>
       <button type="button" class="header__link" data-filter="Разминка">Разминка</button>
     </nav>
-    <div class="header__search-wrap">
-      <input type="search" class="header__search" placeholder="Поиск по материалам…" autocomplete="off" id="searchInput">
+    <div class="header__actions">
+      <button type="button" class="header__admin" data-admin-open aria-label="Админ-панель" title="Админ-панель">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+          <circle cx="12" cy="12" r="3"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>
+        </svg>
+        <span class="header__admin-text">Админ</span>
+      </button>
+      <div class="header__search-wrap">
+        <input type="search" class="header__search" placeholder="Поиск…" autocomplete="off" id="searchInput">
+      </div>
     </div>
   </header>
 
@@ -42,6 +57,11 @@
       <p class="hero__text">Интерактивная библиотека блоков для тренеров WORKOUT. Нажмите на карточку — откроется полный материал с плавным переходом.</p>
       <div class="hero__stats" id="heroStats"></div>
     </section>
+
+    <div class="load-banner hidden" id="loadBanner" role="alert">
+      <p id="loadBannerText">Загрузка материалов…</p>
+      <button type="button" class="load-banner__btn" onclick="location.reload()">Обновить</button>
+    </div>
 
     <section class="grid-section">
       <div class="grid" id="cardsGrid" role="list"></div>
@@ -79,8 +99,14 @@
   <footer class="footer">
     <img src="logo.jpg" alt="" class="footer__logo" width="40" height="40">
     <p>© WORKOUT Sport Center · Здоровое поколение · 2016</p>
-    <button type="button" class="footer__admin" id="adminOpenBtn" aria-label="Панель администратора">Админ</button>
+    <button type="button" class="footer__admin" data-admin-open aria-label="Панель администратора">Админ-панель</button>
   </footer>
+
+  <button type="button" class="admin-fab" data-admin-open aria-label="Открыть админ-панель" title="Админ">
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+      <circle cx="12" cy="12" r="3"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>
+    </svg>
+  </button>
 
   <!-- Admin panel -->
   <div class="admin" id="adminPanel" aria-hidden="true">
@@ -94,9 +120,10 @@
       <div id="adminLogin" class="admin-login">
         <p class="admin-login__hint">Вход для тренеров и администраторов</p>
         <form id="adminLoginForm">
-          <input type="password" id="adminPassword" placeholder="Пароль" required autocomplete="current-password">
+          <input type="password" id="adminPassword" placeholder="Пароль" required autocomplete="current-password" inputmode="text">
           <button type="submit" class="admin-btn admin-btn--primary">Войти</button>
         </form>
+        <p class="admin-login__device">Работает на компьютере и телефоне. Пароль сохраняется на этом устройстве 30 дней.</p>
         <p class="admin-login__error" id="adminLoginError"></p>
       </div>
 
@@ -168,6 +195,8 @@
   </div>
   <div class="admin-toast" id="adminToast"></div>
 
-  <script src="js/main.js" type="module"></script>
+  <script src="js/content-store.js"></script>
+  <script src="js/admin.js"></script>
+  <script src="js/main.js"></script>
 </body>
 </html>

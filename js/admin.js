@@ -1,28 +1,28 @@
 /**
  * Панель администратора — редактирование без кода
  */
+(function () {
+  const S = window.WorkoutStore;
+  const STORAGE_PASSWORD = S.STORAGE_PASSWORD;
+  const STORAGE_JSONBIN = S.STORAGE_JSONBIN;
+  const getContentData = () => S.getContentData();
+  const clearContentLocal = () => S.clearContentLocal();
+  const downloadContentJson = () => S.downloadContentJson();
+  const importContentFromFile = (f) => S.importContentFromFile(f);
+  const isAdminLoggedIn = () => S.isAdminLoggedIn();
+  const loadAdminConfig = () => S.loadAdminConfig();
+  const loadContent = () => S.loadContent();
+  const publishToJsonBin = (d) => S.publishToJsonBin(d);
+  const saveContentLocal = (d) => S.saveContentLocal(d);
+  const setAdminLoggedIn = (v) => S.setAdminLoggedIn(v);
+  const sha256 = (t) => S.sha256(t);
+  const slugId = (t) => S.slugId(t);
+  const verifyPassword = (p) => S.verifyPassword(p);
 
-import {
-  STORAGE_PASSWORD,
-  STORAGE_JSONBIN,
-  clearContentLocal,
-  downloadContentJson,
-  getContentData,
-  importContentFromFile,
-  isAdminLoggedIn,
-  loadAdminConfig,
-  loadContent,
-  publishToJsonBin,
-  saveContentLocal,
-  setAdminLoggedIn,
-  sha256,
-  slugId,
-  verifyPassword,
-} from './content-store.js';
+  const $ = (sel, root = document) => root.querySelector(sel);
+  const $$ = (sel, root = document) => Array.prototype.slice.call(root.querySelectorAll(sel));
 
-const $ = (sel, root = document) => root.querySelector(sel);
-
-const CATEGORIES = ['Уровни', 'Методика', 'Разминка'];
+  const CATEGORIES = ['Уровни', 'Методика', 'Разминка'];
 
 let editingId = null;
 
@@ -253,19 +253,59 @@ async function changePassword() {
   showToast('Пароль изменён');
 }
 
+function openAdminEntry() {
+  if (isAdminLoggedIn()) {
+    openAdmin();
+    showApp();
+  } else {
+    openAdmin();
+    showLogin();
+    requestAnimationFrame(function () {
+      var input = $('#adminPassword');
+      if (input) input.focus();
+    });
+  }
+  if (history.replaceState) {
+    history.replaceState(null, '', '#admin');
+  } else {
+    location.hash = 'admin';
+  }
+}
+
+function closeAdminPanel() {
+  closeAdmin();
+  if (location.hash === '#admin' && history.replaceState) {
+    history.replaceState(null, '', location.pathname + location.search);
+  }
+}
+
+function shouldOpenAdminFromUrl() {
+  if (location.hash === '#admin') return true;
+  try {
+    return new URLSearchParams(location.search).get('admin') === '1';
+  } catch (e) {
+    return false;
+  }
+}
+
 function bindAdminEvents() {
-  $('#adminOpenBtn')?.addEventListener('click', () => {
-    if (isAdminLoggedIn()) {
-      openAdmin();
-      showApp();
-    } else {
-      openAdmin();
-      showLogin();
-    }
+  document.querySelectorAll('[data-admin-open]').forEach(function (btn) {
+    btn.addEventListener('click', function (e) {
+      e.preventDefault();
+      openAdminEntry();
+    });
   });
 
-  $('#adminCloseBtn')?.addEventListener('click', closeAdmin);
-  $('#adminBackdrop')?.addEventListener('click', closeAdmin);
+  var closeBtn = $('#adminCloseBtn');
+  if (closeBtn) closeBtn.addEventListener('click', closeAdminPanel);
+  var backdrop = $('#adminBackdrop');
+  if (backdrop) backdrop.addEventListener('click', closeAdminPanel);
+
+  window.addEventListener('hashchange', function () {
+    if (location.hash === '#admin' && !$('#adminPanel').classList.contains('is-open')) {
+      openAdminEntry();
+    }
+  });
 
   $('#adminLoginForm')?.addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -329,8 +369,18 @@ function bindAdminEvents() {
   });
 }
 
-export async function initAdmin() {
-  await loadAdminConfig();
-  loadJsonBinSettings();
-  bindAdminEvents();
-}
+  async function initAdmin() {
+    await loadAdminConfig();
+    loadJsonBinSettings();
+    bindAdminEvents();
+    if (shouldOpenAdminFromUrl()) {
+      openAdminEntry();
+    }
+  }
+
+  window.WorkoutAdmin = {
+    init: initAdmin,
+    open: openAdminEntry,
+    close: closeAdminPanel,
+  };
+})();
