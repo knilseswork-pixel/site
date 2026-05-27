@@ -216,17 +216,22 @@
           <button type="button" class="admin-btn" id="changePasswordBtn">Сменить пароль</button>
           <hr class="admin-hr">
 
-          <h3>GitHub — автоматический push</h3>
+          <h3>GitHub — токен публикации</h3>
           <p class="admin-help">
-            Заполните один раз — и кнопка «Опубликовать в GitHub» сама отправит все JSON файлы прямо в репозиторий.<br>
-            <strong>Как получить токен:</strong> <a href="https://github.com/settings/tokens/new?description=workout-site&scopes=repo" target="_blank" rel="noopener">github.com/settings/tokens</a> → New token → отметить <code>repo</code> → Generate → скопировать.
+            Репозиторий уже задан: <code>knilseswork-pixel/site</code>, ветка <code>main</code>.<br>
+            Введите токен один раз — и кнопка «Опубликовать» сама пушит файлы в <code>data/</code>.<br>
+            <strong>Получить токен:</strong>
+            <a href="https://github.com/settings/tokens/new?description=workout-site&scopes=repo" target="_blank" rel="noopener">github.com/settings/tokens</a>
+            → New token (classic) → отметить <code>repo</code> → Generate → скопировать.
           </p>
-          <label>GitHub Token (ghp_…)<input type="password" id="ghToken" autocomplete="off" placeholder="ghp_xxxxxxxxxxxx"></label>
-          <label>Репозиторий (user/repo)<input type="text" id="ghRepo" placeholder="ivanov/workout-site"></label>
-          <label>Ветка<input type="text" id="ghBranch" placeholder="main" value="main"></label>
-          <button type="button" class="admin-btn admin-btn--primary" id="ghSaveBtn">Сохранить настройки GitHub</button>
-          <button type="button" class="admin-btn" id="ghCheckBtn">Проверить токен</button>
-          <p class="admin-help" id="ghStatus"></p>
+          <label>GitHub Token (ghp_…)
+            <input type="password" id="ghToken" autocomplete="off" placeholder="ghp_xxxxxxxxxxxxxxxx" style="font-family:monospace">
+          </label>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:4px">
+            <button type="button" class="admin-btn admin-btn--primary" id="ghSaveBtn">Сохранить токен</button>
+            <button type="button" class="admin-btn" id="ghCheckBtn">Проверить</button>
+          </div>
+          <p class="admin-help" id="ghStatus" style="margin-top:8px"></p>
           <hr class="admin-hr">
 
           <h3>JSONBin (резервное облако)</h3>
