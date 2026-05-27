@@ -1448,6 +1448,40 @@ body.detail-open .bottom-bar {
   object-fit: cover;
 }
 
+.drive-photo-wrap {
+  margin-bottom: 8px;
+}
+
+.drive-photo-frame {
+  display: block;
+  width: 100%;
+  min-height: 280px;
+  height: 50vw;
+  max-height: 480px;
+  border: 0;
+  background: #111;
+}
+
+.drive-photo-open {
+  display: inline-block;
+  margin-top: 10px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--red);
+  text-decoration: none;
+}
+
+.drive-photo-open:hover {
+  text-decoration: underline;
+}
+
+.drive-photo-hint {
+  margin: 8px 0 0;
+  font-size: 0.8125rem;
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+
 .content-block {
   margin-bottom: 28px;
   padding: 20px;

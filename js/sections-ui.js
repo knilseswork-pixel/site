@@ -24,6 +24,48 @@
     return window.Workout && window.Workout.assetUrl ? window.Workout.assetUrl(s) : s;
   }
 
+  function renderPhotoImg(photoUrl, alt) {
+    var raw = String(photoUrl || '').trim();
+    if (!raw) return '';
+    if (window.WorkoutMedia && window.WorkoutMedia.isDriveUrl(raw)) {
+      var urls = window.WorkoutMedia.getDriveImageUrls(raw);
+      if (urls && urls.preview) {
+        return (
+          '<div class="drive-photo-wrap">' +
+          '<iframe class="drive-photo-frame" src="' +
+          escapeHtml(urls.preview) +
+          '" title="' +
+          escapeHtml(alt || 'Фото') +
+          '" loading="lazy" allow="autoplay" referrerpolicy="no-referrer-when-downgrade"></iframe>' +
+          '<a class="drive-photo-open" href="' +
+          escapeHtml(urls.open) +
+          '" target="_blank" rel="noopener noreferrer">Открыть в Google Drive</a>' +
+          '<p class="drive-photo-hint">Не видно фото? В Drive: Поделиться → «Все, у кого есть ссылка» → Читатель</p>' +
+          '</div>'
+        );
+      }
+    }
+    var src = assetUrl(raw);
+    var attrs =
+      'class="item-photo" src="' +
+      escapeHtml(src) +
+      '" alt="' +
+      escapeHtml(alt || '') +
+      '" loading="lazy"';
+    if (window.WorkoutMedia && window.WorkoutMedia.isDriveUrl(raw)) {
+      var driveUrls = window.WorkoutMedia.getDriveImageUrls(raw);
+      if (driveUrls) {
+        var chain = [driveUrls.fallback, driveUrls.fallback2].filter(Boolean);
+        if (chain.length) {
+          attrs += ' data-drive-fb="' + escapeHtml(chain.join('|')) + '"';
+          attrs +=
+            ' onerror="var p=this.dataset.driveFb;if(!p){return}var a=p.split(\'|\');var n=parseInt(this.dataset.driveFi||\'0\',10);if(n<a.length){this.dataset.driveFi=String(n+1);this.src=a[n]}else{this.classList.add(\'item-photo--broken\')}"';
+        }
+      }
+    }
+    return '<img ' + attrs + '>';
+  }
+
   function hasContent(text) {
     return String(text || '').trim().length > 0;
   }
@@ -365,12 +407,7 @@
     $('#detailMeta').textContent = '';
 
     if (item.photo) {
-      html +=
-        '<div class="item-photo-wrap"><img class="item-photo" src="' +
-        assetUrl(item.photo) +
-        '" alt="' +
-        escapeHtml(item.title) +
-        '"></div>';
+      html += '<div class="item-photo-wrap">' + renderPhotoImg(item.photo, item.title) + '</div>';
     }
 
     if (tpl === 'dynamic-level') {

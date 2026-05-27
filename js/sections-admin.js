@@ -216,9 +216,7 @@
               escapeHtml(ex.id) +
               '">' +
               '<div class="admin-exercise-block__head">' +
-              '<strong>' +
-              exLabel +
-              '</strong>' +
+              '<strong>Упражнение</strong>' +
               '<button type="button" class="admin-btn admin-btn--sm admin-btn--danger" data-action="del-exercise">Удалить</button>' +
               '</div>' +
               '<label class="admin-field">Название<input type="text" data-f="title" value="' +
