@@ -455,6 +455,8 @@ function bindGhEvents() {
       btn.textContent = origText;
     });
   }
+
+  loadGhSettings();
 }
 
 function bindAdminEvents() {
@@ -570,7 +572,6 @@ function bindAdminEvents() {
     await loadAdminConfig();
     loadJsonBinSettings();
     bindAdminEvents();
-    loadGhSettings();
     if (shouldOpenAdminFromUrl()) {
       openAdminEntry();
     }
@@ -580,5 +581,6 @@ function bindAdminEvents() {
     init: initAdmin,
     open: openAdminEntry,
     close: closeAdminPanel,
+    applyGhSettings: loadGhSettings,
   };
 })();

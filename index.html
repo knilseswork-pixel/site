@@ -245,19 +245,55 @@
   </div>
   <div class="admin-toast" id="adminToast"></div>
 
-  <script src="js/github-push.js"></script>
-  <script src="js/site-config-data.js"></script>
-  <script src="js/content-data.js"></script>
-  <script src="js/level-sort.js"></script>
-  <script src="js/sections-data.js"></script>
-  <script src="js/site-config-store.js"></script>
-  <script src="js/content-store.js"></script>
-  <script src="js/sections-store.js"></script>
-  <script src="js/admin.js"></script>
-  <script src="js/sections-admin.js"></script>
-  <script src="js/site-builder.js"></script>
-  <script src="js/site-nav.js"></script>
-  <script src="js/main.js"></script>
-  <script src="js/sections-ui.js"></script>
+  <script>
+    (function () {
+      var BUILD = '20260527c';
+      var scripts = [
+        'js/github-push.js',
+        'js/site-config-data.js',
+        'js/content-data.js',
+        'js/level-sort.js',
+        'js/sections-data.js',
+        'js/site-config-store.js',
+        'js/content-store.js',
+        'js/sections-store.js',
+        'js/admin.js',
+        'js/sections-admin.js',
+        'js/site-builder.js',
+        'js/site-nav.js',
+        'js/main.js',
+        'js/sections-ui.js'
+      ];
+      function srcFor(path) {
+        var url = (window.Workout && window.Workout.assetUrl) ? window.Workout.assetUrl(path) : path;
+        return url + (url.indexOf('?') >= 0 ? '&' : '?') + 'v=' + BUILD;
+      }
+      function boot() {
+        if (window.WorkoutBoot) {
+          window.WorkoutBoot();
+        }
+      }
+      function loadNext(i) {
+        if (i >= scripts.length) {
+          boot();
+          return;
+        }
+        var el = document.createElement('script');
+        el.src = srcFor(scripts[i]);
+        el.async = false;
+        el.onload = function () { loadNext(i + 1); };
+        el.onerror = function () {
+          console.error('Не удалось загрузить:', scripts[i]);
+          loadNext(i + 1);
+        };
+        document.body.appendChild(el);
+      }
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', function () { loadNext(0); });
+      } else {
+        loadNext(0);
+      }
+    })();
+  </script>
 </body>
 </html>

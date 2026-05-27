@@ -573,7 +573,13 @@
       await loadContent();
       if (window.SectionsStore) await window.SectionsStore.loadSections();
       if (window.SiteNav) await window.SiteNav.init();
-      if (window.WorkoutAdmin) await window.WorkoutAdmin.init();
+      if (window.WorkoutAdmin) {
+        try {
+          await window.WorkoutAdmin.init();
+        } catch (adminErr) {
+          console.error('Admin init failed:', adminErr);
+        }
+      }
       if (window.SectionsAdmin) window.SectionsAdmin.init();
       if (window.SiteBuilder) window.SiteBuilder.init();
       if (window.SectionsUI) await window.SectionsUI.init();
@@ -595,9 +601,5 @@
     }
   }
 
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', init);
-  } else {
-    init();
-  }
+  window.WorkoutBoot = init;
 })();
