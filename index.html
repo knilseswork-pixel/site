@@ -189,7 +189,7 @@
 
         <div class="admin-tab-panel hidden" data-tab="publish">
           <div class="admin-help" id="publishGhHint">
-            <p id="publishGhStatus">⚙ GitHub не настроен. Откройте «Настройки» → «GitHub — автоматический push».</p>
+            <p id="publishGhStatus">⚙ Укажите токен в .env и выполните node scripts/sync-github-env.js</p>
           </div>
           <button type="button" class="admin-btn admin-btn--primary" id="adminPublishGitHub" style="font-size:1rem;padding:14px 20px">
             🚀 Опубликовать в GitHub (все файлы)
@@ -216,22 +216,25 @@
           <button type="button" class="admin-btn" id="changePasswordBtn">Сменить пароль</button>
           <hr class="admin-hr">
 
-          <h3>GitHub — токен публикации</h3>
+          <h3>GitHub — публикация</h3>
           <p class="admin-help">
-            Репозиторий уже задан: <code>knilseswork-pixel/site</code>, ветка <code>main</code>.<br>
-            Введите токен один раз — и кнопка «Опубликовать» сама пушит файлы в <code>data/</code>.<br>
-            <strong>Получить токен:</strong>
-            <a href="https://github.com/settings/tokens/new?description=workout-site&scopes=repo" target="_blank" rel="noopener">github.com/settings/tokens</a>
-            → New token (classic) → отметить <code>repo</code> → Generate → скопировать.
+            Репозиторий: <code>knilseswork-pixel/site</code>, ветка <code>main</code>.<br>
+            <strong>Один раз на этом компьютере:</strong> откройте файл
+            <code>js/github-local.config.js</code>, вставьте токен <code>ghp_...</code> между кавычками, сохраните.<br>
+            Или запустите <code>setup-token.bat</code> в папке сайта.<br>
+            Файл с токеном в <code>.gitignore</code> — при обычном push в GitHub не попадёт.
           </p>
-          <label>GitHub Token (ghp_…)
-            <input type="password" id="ghToken" autocomplete="off" placeholder="ghp_xxxxxxxxxxxxxxxx" style="font-family:monospace">
-          </label>
-          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:4px">
-            <button type="button" class="admin-btn admin-btn--primary" id="ghSaveBtn">Сохранить токен</button>
-            <button type="button" class="admin-btn" id="ghCheckBtn">Проверить</button>
+          <div id="ghTokenBlock" class="hidden">
+            <p class="admin-help">Резерв: ввод токена в браузер</p>
+            <label>GitHub Token (ghp_…)
+              <input type="password" id="ghToken" autocomplete="off" placeholder="ghp_xxxxxxxxxxxxxxxx" style="font-family:monospace">
+            </label>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:4px">
+              <button type="button" class="admin-btn admin-btn--primary" id="ghSaveBtn">Сохранить токен</button>
+              <button type="button" class="admin-btn" id="ghCheckBtn">Проверить</button>
+            </div>
+            <p class="admin-help" id="ghStatus" style="margin-top:8px"></p>
           </div>
-          <p class="admin-help" id="ghStatus" style="margin-top:8px"></p>
           <hr class="admin-hr">
 
           <h3>JSONBin (резервное облако)</h3>
@@ -247,9 +250,11 @@
 
   <script>
     (function () {
-      var BUILD = '20260528d';
+      var BUILD = '20260528f';
       var scripts = [
         'js/media-url.js',
+        '_optional:js/github-local.config.js',
+        '_optional:js/github-secrets.local.js',
         'js/github-push.js',
         'js/site-config-data.js',
         'js/content-data.js',
@@ -280,12 +285,15 @@
           boot();
           return;
         }
+        var entry = scripts[i];
+        var optional = entry.indexOf('_optional:') === 0;
+        var path = optional ? entry.slice(10) : entry;
         var el = document.createElement('script');
-        el.src = srcFor(scripts[i]);
+        el.src = srcFor(path);
         el.async = false;
         el.onload = function () { loadNext(i + 1); };
         el.onerror = function () {
-          console.error('Не удалось загрузить:', scripts[i]);
+          if (!optional) console.error('Не удалось загрузить:', path);
           loadNext(i + 1);
         };
         document.body.appendChild(el);

@@ -358,20 +358,31 @@ function shouldOpenAdminFromUrl() {
 
 function loadGhSettings() {
   if (!window.GitHubPush) return;
-  var s = window.GitHubPush.loadSettings();
-  var tokenEl = $('#ghToken');
-  if (s.token && tokenEl) tokenEl.value = s.token;
-  updatePublishHint(s);
+  var embedded = window.GitHubPush.hasEmbeddedToken();
+  var tokenBlock = $('#ghTokenBlock');
+  if (tokenBlock) tokenBlock.classList.toggle('hidden', embedded);
+  if (!embedded) {
+    var s = window.GitHubPush.loadSettings();
+    var tokenEl = $('#ghToken');
+    if (s.token && tokenEl) tokenEl.value = s.token;
+  }
+  updatePublishHint();
 }
 
-function updatePublishHint(s) {
+function updatePublishHint() {
   var hint = $('#publishGhStatus');
-  if (!hint) return;
-  if (s && s.token) {
-    hint.textContent = '✓ Токен задан · репозиторий: knilseswork-pixel/site → всё готово.';
+  if (!hint || !window.GitHubPush) return;
+  if (window.GitHubPush.hasToken()) {
+    if (window.GitHubPush.hasEmbeddedToken()) {
+      hint.textContent =
+        '✓ Токен из .env (локально) · репозиторий knilseswork-pixel/site — можно публиковать.';
+    } else {
+      hint.textContent = '✓ Токен задан · репозиторий: knilseswork-pixel/site → всё готово.';
+    }
     hint.style.color = '#4ade80';
   } else {
-    hint.textContent = '⚙ Токен не задан. Откройте «Настройки» → «GitHub — токен».';
+    hint.textContent =
+      '⚙ Вставьте токен в js/github-local.config.js (или запустите setup-token.bat)';
     hint.style.color = '';
   }
 }
@@ -387,7 +398,7 @@ function bindGhEvents() {
         return;
       }
       window.GitHubPush.saveSettings({ token: token });
-      updatePublishHint({ token: token });
+      updatePublishHint();
       showToast('Токен сохранён');
     });
   }
@@ -427,7 +438,9 @@ function bindGhEvents() {
       }
 
       if (!window.GitHubPush.hasToken()) {
-        alert('Токен не задан!\nОткройте: Настройки → «GitHub — токен публикации».');
+        alert(
+          'Токен не задан!\n\nОткройте js/github-local.config.js\nВставьте ghp_... между кавычками и сохраните.\nИли запустите setup-token.bat'
+        );
         return;
       }
 
@@ -449,7 +462,7 @@ function bindGhEvents() {
 
         if (window.SiteConfigStore) window.SiteConfigStore.clearAllDrafts();
 
-        updatePublishHint(window.GitHubPush.getSettings());
+        updatePublishHint();
       } catch (e) {
         showToast('Ошибка: ' + e.message);
         alert('Ошибка публикации:\n' + e.message);

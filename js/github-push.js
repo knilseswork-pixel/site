@@ -38,9 +38,23 @@
     return loadSettings();
   }
 
-  function hasToken() {
+  function getEmbeddedToken() {
+    return String(window.__WORKOUT_GH_TOKEN__ || '').trim();
+  }
+
+  function getActiveToken() {
+    var embedded = getEmbeddedToken();
+    if (embedded) return embedded;
     var s = loadSettings();
-    return !!(s.token && s.token.trim());
+    return (s.token || '').trim();
+  }
+
+  function hasEmbeddedToken() {
+    return !!getEmbeddedToken();
+  }
+
+  function hasToken() {
+    return !!getActiveToken();
   }
 
   /* ── Base64 для браузера ── */
@@ -106,12 +120,12 @@
    * @param {function} onProgress (statusString) => void
    */
   async function publishAll(files, onProgress) {
-    var s = loadSettings();
-    if (!s.token || !s.token.trim()) {
-      throw new Error('Токен не задан. Откройте Настройки → «GitHub токен» и введите ghp_…');
+    var token = getActiveToken();
+    if (!token) {
+      throw new Error(
+        'Токен не задан. Создайте .env с GITHUB_TOKEN и выполните: node scripts/sync-github-env.js'
+      );
     }
-
-    var token = s.token.trim();
     var ts    = new Date().toLocaleString('ru');
     var msg   = 'site update ' + ts;
 
@@ -133,11 +147,11 @@
 
   /* Проверить, что токен вообще рабочий */
   async function checkToken() {
-    var s = loadSettings();
-    if (!s.token) return { ok: false, reason: 'Токен не задан' };
+    var token = getActiveToken();
+    if (!token) return { ok: false, reason: 'Токен не задан' };
     try {
       var res = await fetch('https://api.github.com/user', {
-        headers: { Authorization: 'token ' + s.token, Accept: 'application/vnd.github+json' },
+        headers: { Authorization: 'token ' + token, Accept: 'application/vnd.github+json' },
       });
       if (!res.ok) return { ok: false, reason: 'HTTP ' + res.status };
       var user = await res.json();
@@ -153,8 +167,10 @@
     loadSettings   : loadSettings,
     saveSettings   : saveSettings,
     getSettings    : getSettings,
-    hasToken       : hasToken,
-    publishAll     : publishAll,
-    checkToken     : checkToken,
+    hasToken         : hasToken,
+    hasEmbeddedToken : hasEmbeddedToken,
+    getActiveToken   : getActiveToken,
+    publishAll       : publishAll,
+    checkToken       : checkToken,
   };
 })();
