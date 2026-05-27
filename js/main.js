@@ -2,6 +2,31 @@
  * WORKOUT Sport Center — главный скрипт
  */
 (function () {
+  window.addEventListener('error', function (event) {
+    try {
+      var banner = document.getElementById('loadBanner');
+      var text = document.getElementById('loadBannerText');
+      if (!banner || !text) return;
+      banner.classList.remove('hidden');
+      var msg = (event && event.message) ? event.message : 'Ошибка скрипта';
+      text.textContent = 'Ошибка: ' + msg;
+    } catch (e) {
+      /* ignore */
+    }
+  });
+
+  window.addEventListener('unhandledrejection', function (event) {
+    try {
+      var banner = document.getElementById('loadBanner');
+      var text = document.getElementById('loadBannerText');
+      if (!banner || !text) return;
+      banner.classList.remove('hidden');
+      var msg = event && event.reason ? (event.reason.message || String(event.reason)) : 'Promise rejection';
+      text.textContent = 'Ошибка: ' + msg;
+    } catch (e) {
+      /* ignore */
+    }
+  });
   const S = window.WorkoutStore;
   const getContentData = () => S.getContentData();
   const loadContent = () => S.loadContent();
@@ -562,7 +587,10 @@
       if (banner) {
         banner.classList.remove('hidden');
         var t = $('#loadBannerText');
-        if (t) t.textContent = 'Ошибка загрузки сайта. Обновите страницу или откройте через Chrome/Safari.';
+        if (t) {
+          var msg = (e && (e.message || e.toString && e.toString())) ? String(e.message || e.toString()) : 'Неизвестная ошибка';
+          t.textContent = 'Ошибка загрузки: ' + msg;
+        }
       }
     }
   }
