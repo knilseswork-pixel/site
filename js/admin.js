@@ -352,6 +352,111 @@ function shouldOpenAdminFromUrl() {
   }
 }
 
+function loadGhSettings() {
+  if (!window.GitHubPush) return;
+  var s = window.GitHubPush.loadSettings();
+  var tokenEl = $('#ghToken');
+  if (s.token && tokenEl) tokenEl.value = s.token;
+  updatePublishHint(s);
+}
+
+function updatePublishHint(s) {
+  var hint = $('#publishGhStatus');
+  if (!hint) return;
+  if (s && s.token) {
+    hint.textContent = '✓ Токен задан · репозиторий: knilseswork-pixel/site → всё готово.';
+    hint.style.color = '#4ade80';
+  } else {
+    hint.textContent = '⚙ Токен не задан. Откройте «Настройки» → «GitHub — токен».';
+    hint.style.color = '';
+  }
+}
+
+function bindGhEvents() {
+  var ghSaveBtn = $('#ghSaveBtn');
+  if (ghSaveBtn) {
+    ghSaveBtn.addEventListener('click', function () {
+      if (!window.GitHubPush) return;
+      var token = ($('#ghToken').value || '').trim();
+      if (!token) {
+        showToast('Вставьте токен ghp_…');
+        return;
+      }
+      window.GitHubPush.saveSettings({ token: token });
+      updatePublishHint({ token: token });
+      showToast('Токен сохранён');
+    });
+  }
+
+  var ghCheckBtn = $('#ghCheckBtn');
+  if (ghCheckBtn) {
+    ghCheckBtn.addEventListener('click', async function () {
+      if (!window.GitHubPush) return;
+      var btn = ghCheckBtn;
+      var status = $('#ghStatus');
+      btn.disabled = true;
+      btn.textContent = 'Проверяю…';
+      try {
+        var result = await window.GitHubPush.checkToken();
+        if (result.ok) {
+          status.textContent = '✓ Токен работает! Вы вошли как: ' + result.login;
+          status.style.color = '#4ade80';
+        } else {
+          status.textContent = '✗ Токен не принят: ' + result.reason + '. Проверьте права (нужен scope: repo).';
+          status.style.color = '#f87171';
+        }
+      } catch (e) {
+        status.textContent = '✗ Ошибка: ' + e.message;
+        status.style.color = '#f87171';
+      }
+      btn.disabled = false;
+      btn.textContent = 'Проверить';
+    });
+  }
+
+  var publishGhBtn = $('#adminPublishGitHub');
+  if (publishGhBtn) {
+    publishGhBtn.addEventListener('click', async function () {
+      if (!window.GitHubPush) {
+        showToast('Модуль github-push.js не загружен');
+        return;
+      }
+
+      if (!window.GitHubPush.hasToken()) {
+        alert('Токен не задан!\nОткройте: Настройки → «GitHub — токен публикации».');
+        return;
+      }
+
+      var btn = publishGhBtn;
+      var origText = btn.textContent;
+      btn.disabled = true;
+
+      try {
+        var files = {
+          siteConfig: window.SiteConfigStore ? window.SiteConfigStore.getSiteConfig() : null,
+          content: getContentData(),
+          sections: window.SectionsStore ? window.SectionsStore.getSectionsData() : null,
+        };
+
+        await window.GitHubPush.publishAll(files, function (msg) {
+          btn.textContent = msg;
+          showToast(msg);
+        });
+
+        if (window.SiteConfigStore) window.SiteConfigStore.clearAllDrafts();
+
+        updatePublishHint(window.GitHubPush.getSettings());
+      } catch (e) {
+        showToast('Ошибка: ' + e.message);
+        alert('Ошибка публикации:\n' + e.message);
+      }
+
+      btn.disabled = false;
+      btn.textContent = origText;
+    });
+  }
+}
+
 function bindAdminEvents() {
   document.querySelectorAll('[data-admin-open]').forEach(function (btn) {
     btn.addEventListener('click', function (e) {
@@ -438,99 +543,14 @@ function bindAdminEvents() {
     showToast('Загружено с сервера');
   });
 
-  /* ─── GitHub push ─── */
-  function loadGhSettings() {
-    if (!window.GitHubPush) return;
-    var s = window.GitHubPush.loadSettings();
-    if (s.token) $('#ghToken').value = s.token;
-    updatePublishHint(s);
-  }
+  bindGhEvents();
 
-  function updatePublishHint(s) {
-    var hint = $('#publishGhStatus');
-    if (!hint) return;
-    if (s && s.token) {
-      hint.textContent = '✓ Токен задан · репозиторий: knilseswork-pixel/site → всё готово.';
-      hint.style.color = '#4ade80';
-    } else {
-      hint.textContent = '⚙ Токен не задан. Откройте «Настройки» → «GitHub — токен».';
-      hint.style.color = '';
-    }
-  }
-
-  $('#ghSaveBtn')?.addEventListener('click', function () {
-    if (!window.GitHubPush) return;
-    var token = ($('#ghToken').value || '').trim();
-    if (!token) { showToast('Вставьте токен ghp_…'); return; }
-    window.GitHubPush.saveSettings({ token: token });
-    updatePublishHint({ token: token });
-    showToast('Токен сохранён');
-  });
-
-  $('#ghCheckBtn')?.addEventListener('click', async function () {
-    if (!window.GitHubPush) return;
-    var btn = $('#ghCheckBtn');
-    var status = $('#ghStatus');
-    btn.disabled = true;
-    btn.textContent = 'Проверяю…';
-    try {
-      var result = await window.GitHubPush.checkToken();
-      if (result.ok) {
-        status.textContent = '✓ Токен работает! Вы вошли как: ' + result.login;
-        status.style.color = '#4ade80';
-      } else {
-        status.textContent = '✗ Токен не принят: ' + result.reason + '. Проверьте права (нужен scope: repo).';
-        status.style.color = '#f87171';
-      }
-    } catch (e) {
-      status.textContent = '✗ Ошибка: ' + e.message;
-      status.style.color = '#f87171';
-    }
-    btn.disabled = false;
-    btn.textContent = 'Проверить';
-  });
-
-  $('#adminPublishGitHub')?.addEventListener('click', async function () {
-    if (!window.GitHubPush) { showToast('Модуль github-push.js не загружен'); return; }
-
-    if (!window.GitHubPush.hasToken()) {
-      alert('Токен не задан!\nОткройте: Настройки → «GitHub — токен публикации».');
-      return;
-    }
-
-    var btn = $('#adminPublishGitHub');
-    var origText = btn.textContent;
-    btn.disabled = true;
-
-    try {
-      var files = {
-        siteConfig : window.SiteConfigStore ? window.SiteConfigStore.getSiteConfig() : null,
-        content    : S.getContentData(),
-        sections   : window.SectionsStore   ? window.SectionsStore.getSectionsData()   : null,
-      };
-
-      await window.GitHubPush.publishAll(files, function (msg) {
-        btn.textContent = msg;
-        showToast(msg);
-      });
-
-      /* После успешной публикации черновик больше не нужен */
-      if (window.SiteConfigStore) window.SiteConfigStore.clearAllDrafts();
-
-      updatePublishHint(window.GitHubPush.getSettings());
-
-    } catch (e) {
-      showToast('Ошибка: ' + e.message);
-      alert('Ошибка публикации:\n' + e.message);
-    }
-
-    btn.disabled = false;
-    btn.textContent = origText;
-  });
-
-  $('#adminPublishCloud')?.addEventListener('click', handlePublishCloud);
-  $('#saveJsonBinSettings')?.addEventListener('click', saveJsonBinSettings);
-  $('#changePasswordBtn')?.addEventListener('click', changePassword);
+  var publishCloudBtn = $('#adminPublishCloud');
+  if (publishCloudBtn) publishCloudBtn.addEventListener('click', handlePublishCloud);
+  var saveJsonBinBtn = $('#saveJsonBinSettings');
+  if (saveJsonBinBtn) saveJsonBinBtn.addEventListener('click', saveJsonBinSettings);
+  var changePwdBtn = $('#changePasswordBtn');
+  if (changePwdBtn) changePwdBtn.addEventListener('click', changePassword);
 
   $$('.admin-tab').forEach((tab) => {
     tab.addEventListener('click', () => {
