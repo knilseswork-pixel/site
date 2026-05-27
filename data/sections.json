@@ -171,27 +171,99 @@
           "id": "beginner",
           "title": "Начальный уровень",
           "groups": [
-            { "id": "pulling", "label": "Тянущие", "photo": "", "description": "", "goal": "", "principle": "", "errors": "" },
-            { "id": "pushing", "label": "Толкающие", "photo": "", "description": "", "goal": "", "principle": "", "errors": "" },
-            { "id": "core", "label": "Мышцы кора", "photo": "", "description": "", "goal": "", "principle": "", "errors": "" }
+            {
+              "id": "pulling",
+              "label": "Тянущие",
+              "photo": "",
+              "description": "",
+              "goal": "",
+              "principle": "",
+              "errors": ""
+            },
+            {
+              "id": "pushing",
+              "label": "Толкающие",
+              "photo": "",
+              "description": "",
+              "goal": "",
+              "principle": "",
+              "errors": ""
+            },
+            {
+              "id": "core",
+              "label": "Мышцы кора",
+              "photo": "",
+              "description": "",
+              "goal": "",
+              "principle": "",
+              "errors": ""
+            }
           ]
         },
         {
           "id": "middle",
           "title": "Средний уровень",
           "groups": [
-            { "id": "pulling", "label": "Тянущие", "photo": "", "description": "", "goal": "", "principle": "", "errors": "" },
-            { "id": "pushing", "label": "Толкающие", "photo": "", "description": "", "goal": "", "principle": "", "errors": "" },
-            { "id": "core", "label": "Мышцы кора", "photo": "", "description": "", "goal": "", "principle": "", "errors": "" }
+            {
+              "id": "pulling",
+              "label": "Тянущие",
+              "photo": "",
+              "description": "",
+              "goal": "",
+              "principle": "",
+              "errors": ""
+            },
+            {
+              "id": "pushing",
+              "label": "Толкающие",
+              "photo": "",
+              "description": "",
+              "goal": "",
+              "principle": "",
+              "errors": ""
+            },
+            {
+              "id": "core",
+              "label": "Мышцы кора",
+              "photo": "",
+              "description": "",
+              "goal": "",
+              "principle": "",
+              "errors": ""
+            }
           ]
         },
         {
           "id": "advanced",
           "title": "Продвинутый уровень",
           "groups": [
-            { "id": "pulling", "label": "Тянущие", "photo": "", "description": "", "goal": "", "principle": "", "errors": "" },
-            { "id": "pushing", "label": "Толкающие", "photo": "", "description": "", "goal": "", "principle": "", "errors": "" },
-            { "id": "core", "label": "Мышцы кора", "photo": "", "description": "", "goal": "", "principle": "", "errors": "" }
+            {
+              "id": "pulling",
+              "label": "Тянущие",
+              "photo": "",
+              "description": "",
+              "goal": "",
+              "principle": "",
+              "errors": ""
+            },
+            {
+              "id": "pushing",
+              "label": "Толкающие",
+              "photo": "",
+              "description": "",
+              "goal": "",
+              "principle": "",
+              "errors": ""
+            },
+            {
+              "id": "core",
+              "label": "Мышцы кора",
+              "photo": "",
+              "description": "",
+              "goal": "",
+              "principle": "",
+              "errors": ""
+            }
           ]
         }
       ]
@@ -205,27 +277,82 @@
           "id": "beginner",
           "title": "Начальный уровень",
           "groups": [
-            { "id": "pulling", "label": "Тянущие", "photo": "", "description": "", "goal": "" },
-            { "id": "pushing", "label": "Толкающие", "photo": "", "description": "", "goal": "" },
-            { "id": "core", "label": "Мышцы кора", "photo": "", "description": "", "goal": "" }
-          ]
+            {
+              "id": "pulling",
+              "label": "Тянущие",
+              "photo": "",
+              "description": "пвапав",
+              "goal": "хз"
+            },
+            {
+              "id": "pushing",
+              "label": "Толкающие",
+              "photo": "",
+              "description": "",
+              "goal": ""
+            },
+            {
+              "id": "core",
+              "label": "Мышцы кора",
+              "photo": "",
+              "description": "",
+              "goal": ""
+            }
+          ],
+          "photo": ""
         },
         {
           "id": "middle",
           "title": "Средний уровень",
           "groups": [
-            { "id": "pulling", "label": "Тянущие", "photo": "", "description": "", "goal": "" },
-            { "id": "pushing", "label": "Толкающие", "photo": "", "description": "", "goal": "" },
-            { "id": "core", "label": "Мышцы кора", "photo": "", "description": "", "goal": "" }
+            {
+              "id": "pulling",
+              "label": "Тянущие",
+              "photo": "",
+              "description": "",
+              "goal": ""
+            },
+            {
+              "id": "pushing",
+              "label": "Толкающие",
+              "photo": "",
+              "description": "",
+              "goal": ""
+            },
+            {
+              "id": "core",
+              "label": "Мышцы кора",
+              "photo": "",
+              "description": "",
+              "goal": ""
+            }
           ]
         },
         {
           "id": "advanced",
           "title": "Продвинутый уровень",
           "groups": [
-            { "id": "pulling", "label": "Тянущие", "photo": "", "description": "", "goal": "" },
-            { "id": "pushing", "label": "Толкающие", "photo": "", "description": "", "goal": "" },
-            { "id": "core", "label": "Мышцы кора", "photo": "", "description": "", "goal": "" }
+            {
+              "id": "pulling",
+              "label": "Тянущие",
+              "photo": "",
+              "description": "",
+              "goal": ""
+            },
+            {
+              "id": "pushing",
+              "label": "Толкающие",
+              "photo": "",
+              "description": "",
+              "goal": ""
+            },
+            {
+              "id": "core",
+              "label": "Мышцы кора",
+              "photo": "",
+              "description": "",
+              "goal": ""
+            }
           ]
         }
       ]
