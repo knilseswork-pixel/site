@@ -1702,6 +1702,19 @@ body.detail-open .bottom-bar {
   margin: 6px 6px 6px 0;
 }
 
+#adminPublishGitHub {
+  width: 100%;
+  margin-bottom: 8px;
+  background: var(--red);
+  color: #fff;
+  border-radius: var(--radius-md);
+}
+
+#adminPublishGitHub:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 .admin-sections-list {
   list-style: none;
   margin: 0;

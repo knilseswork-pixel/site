@@ -188,13 +188,18 @@
         </div>
 
         <div class="admin-tab-panel hidden" data-tab="publish">
-          <div class="admin-help">
-            <p><strong>GitHub Pages:</strong> скачайте JSON и замените в репозитории: <code>data/site-config.json</code>, <code>data/content.json</code>, <code>data/sections.json</code>.</p>
-            <p><strong>Для всех сразу (облако):</strong> зарегистрируйтесь на <a href="https://jsonbin.io" target="_blank" rel="noopener">jsonbin.io</a>, создайте bin и укажите ключи во вкладке «Настройки».</p>
+          <div class="admin-help" id="publishGhHint">
+            <p id="publishGhStatus">⚙ GitHub не настроен. Откройте «Настройки» → «GitHub — автоматический push».</p>
           </div>
-          <button type="button" class="admin-btn admin-btn--primary" id="adminDownloadConfig">Скачать site-config.json</button>
-          <button type="button" class="admin-btn admin-btn--primary" id="adminDownload">Скачать content.json</button>
-          <button type="button" class="admin-btn admin-btn--primary" id="adminDownloadSections">Скачать sections.json</button>
+          <button type="button" class="admin-btn admin-btn--primary" id="adminPublishGitHub" style="font-size:1rem;padding:14px 20px">
+            🚀 Опубликовать в GitHub (все файлы)
+          </button>
+          <p class="admin-help">После нажатия сайт обновится у всех через 1–2 минуты.</p>
+          <hr class="admin-hr">
+          <p class="admin-help">Или скачайте файлы вручную и загрузите сами:</p>
+          <button type="button" class="admin-btn" id="adminDownloadConfig">Скачать site-config.json</button>
+          <button type="button" class="admin-btn" id="adminDownload">Скачать content.json</button>
+          <button type="button" class="admin-btn" id="adminDownloadSections">Скачать sections.json</button>
           <button type="button" class="admin-btn" id="adminImportSections">Импорт sections.json</button>
           <input type="file" id="adminImportSectionsFile" accept=".json" hidden>
           <button type="button" class="admin-btn admin-btn--danger" id="adminResetSections">Сбросить разделы (локально)</button>
@@ -210,7 +215,21 @@
           <label>Повтор<input type="password" id="newPassword2" autocomplete="new-password"></label>
           <button type="button" class="admin-btn" id="changePasswordBtn">Сменить пароль</button>
           <hr class="admin-hr">
-          <h3>JSONBin (облако)</h3>
+
+          <h3>GitHub — автоматический push</h3>
+          <p class="admin-help">
+            Заполните один раз — и кнопка «Опубликовать в GitHub» сама отправит все JSON файлы прямо в репозиторий.<br>
+            <strong>Как получить токен:</strong> <a href="https://github.com/settings/tokens/new?description=workout-site&scopes=repo" target="_blank" rel="noopener">github.com/settings/tokens</a> → New token → отметить <code>repo</code> → Generate → скопировать.
+          </p>
+          <label>GitHub Token (ghp_…)<input type="password" id="ghToken" autocomplete="off" placeholder="ghp_xxxxxxxxxxxx"></label>
+          <label>Репозиторий (user/repo)<input type="text" id="ghRepo" placeholder="ivanov/workout-site"></label>
+          <label>Ветка<input type="text" id="ghBranch" placeholder="main" value="main"></label>
+          <button type="button" class="admin-btn admin-btn--primary" id="ghSaveBtn">Сохранить настройки GitHub</button>
+          <button type="button" class="admin-btn" id="ghCheckBtn">Проверить токен</button>
+          <p class="admin-help" id="ghStatus"></p>
+          <hr class="admin-hr">
+
+          <h3>JSONBin (резервное облако)</h3>
           <label>Bin ID<input type="text" id="jsonBinId" placeholder="6789abc..."></label>
           <label>Access Key (чтение)<input type="text" id="jsonBinAccessKey"></label>
           <label>Master Key (запись)<input type="password" id="jsonBinMasterKey"></label>
@@ -221,6 +240,7 @@
   </div>
   <div class="admin-toast" id="adminToast"></div>
 
+  <script src="js/github-push.js"></script>
   <script src="js/site-config-data.js"></script>
   <script src="js/content-data.js"></script>
   <script src="js/level-sort.js"></script>

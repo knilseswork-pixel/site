@@ -19,7 +19,7 @@
   const slugId = (t) => S.slugId(t);
   const verifyPassword = (p) => S.verifyPassword(p);
 
-  const $ = (sel, root = document) => root.querySelector(sel);
+  const $ = (sel, root = document) => (root || document).querySelector(sel);
   const $$ = (sel, root = document) => Array.prototype.slice.call(root.querySelectorAll(sel));
 
   const CATEGORIES = ['Уровни', 'Методика', 'Разминка', 'Соревнования', 'Клиенты'];
@@ -438,6 +438,87 @@ function bindAdminEvents() {
     showToast('Загружено с сервера');
   });
 
+  /* ─── GitHub push ─── */
+  function loadGhSettings() {
+    if (!window.GitHubPush) return;
+    var s = window.GitHubPush.loadSettings();
+    if (s.token) $('#ghToken').value = s.token;
+    if (s.repo) $('#ghRepo').value = s.repo;
+    if (s.branch) $('#ghBranch').value = s.branch || 'main';
+    updatePublishHint(s);
+  }
+
+  function updatePublishHint(s) {
+    var hint = $('#publishGhStatus');
+    if (!hint) return;
+    if (s && s.token && s.repo) {
+      hint.textContent = '✓ GitHub: ' + s.repo + ' / ' + (s.branch || 'main') + ' — всё готово к публикации.';
+      hint.style.color = '#4ade80';
+    } else {
+      hint.textContent = '⚙ GitHub не настроен. Откройте «Настройки» → «GitHub — автоматический push».';
+      hint.style.color = '';
+    }
+  }
+
+  $('#ghSaveBtn')?.addEventListener('click', function () {
+    if (!window.GitHubPush) return;
+    var s = {
+      token: $('#ghToken').value.trim(),
+      repo: $('#ghRepo').value.trim(),
+      branch: $('#ghBranch').value.trim() || 'main',
+    };
+    window.GitHubPush.saveSettings(s);
+    updatePublishHint(s);
+    showToast('Настройки GitHub сохранены');
+  });
+
+  $('#ghCheckBtn')?.addEventListener('click', async function () {
+    if (!window.GitHubPush) return;
+    var btn = $('#ghCheckBtn');
+    btn.disabled = true;
+    btn.textContent = 'Проверяю…';
+    try {
+      var ok = await window.GitHubPush.checkToken();
+      $('#ghStatus').textContent = ok ? '✓ Токен работает!' : '✗ Токен не принят. Проверьте права (repo).';
+      $('#ghStatus').style.color = ok ? '#4ade80' : '#f87171';
+    } catch (e) {
+      $('#ghStatus').textContent = '✗ Ошибка: ' + e.message;
+      $('#ghStatus').style.color = '#f87171';
+    }
+    btn.disabled = false;
+    btn.textContent = 'Проверить токен';
+  });
+
+  $('#adminPublishGitHub')?.addEventListener('click', async function () {
+    if (!window.GitHubPush) { showToast('Модуль не загружен'); return; }
+    var s = window.GitHubPush.getSettings();
+    if (!s.token || !s.repo) {
+      alert('Сначала настройте GitHub: Настройки → GitHub — автоматический push.');
+      return;
+    }
+    var btn = $('#adminPublishGitHub');
+    btn.disabled = true;
+    btn.textContent = 'Публикую…';
+    try {
+      var files = {
+        siteConfig: window.SiteConfigStore ? window.SiteConfigStore.getSiteConfig() : null,
+        content: S.getContentData(),
+        sections: window.SectionsStore ? window.SectionsStore.getSectionsData() : null,
+      };
+      await window.GitHubPush.publishAll(files, function (msg) {
+        btn.textContent = msg;
+        showToast(msg);
+      });
+      /* Сбросить черновик — теперь GitHub = актуальный источник */
+      if (window.SiteConfigStore) window.SiteConfigStore.clearAllDrafts();
+      showToast('✓ Опубликовано! Обновление у всех через 1–2 мин.');
+    } catch (e) {
+      alert('Ошибка публикации: ' + e.message);
+    }
+    btn.disabled = false;
+    btn.textContent = '🚀 Опубликовать в GitHub (все файлы)';
+  });
+
   $('#adminPublishCloud')?.addEventListener('click', handlePublishCloud);
   $('#saveJsonBinSettings')?.addEventListener('click', saveJsonBinSettings);
   $('#changePasswordBtn')?.addEventListener('click', changePassword);
@@ -460,6 +541,7 @@ function bindAdminEvents() {
     await loadAdminConfig();
     loadJsonBinSettings();
     bindAdminEvents();
+    loadGhSettings();
     if (shouldOpenAdminFromUrl()) {
       openAdminEntry();
     }
