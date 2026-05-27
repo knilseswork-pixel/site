@@ -12,6 +12,7 @@
   let adminConfig = null;
 
   var HUB_ARTICLE_IDS = ['competition-hub', 'new-client-hub', 'first-aid-hub'];
+  var REMOVED_ARTICLE_IDS = ['warmup-2', 'prep-level', 'beginner-level', 'middle-level', 'advanced-level'];
 
   var HUB_ARTICLES_FALLBACK = [
     {
@@ -321,7 +322,9 @@
     ensureHubArticles(serverData);
     if (contentData && contentData.articles) {
       contentData.articles = contentData.articles.filter(function (a) {
-        return a.id !== 'warmup-2';
+        if (REMOVED_ARTICLE_IDS.indexOf(a.id) >= 0) return false;
+        if (a.category === 'Уровни') return false;
+        return true;
       });
     }
     return contentData;

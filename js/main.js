@@ -536,7 +536,7 @@
       cats = window.SiteConfigStore.getCategories();
     }
     if (!cats.length) {
-      cats = ['Уровни', 'Методика', 'Разминка', 'Соревнования', 'Клиенты', 'Первая помощь'];
+      cats = ['Методика', 'Разминка', 'Соревнования', 'Клиенты', 'Первая помощь'];
     }
     sel.innerHTML = cats
       .map(function (c) {

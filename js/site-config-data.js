@@ -12,7 +12,6 @@ window.WORKOUT_SITE_CONFIG = {
   ],
   "materialFilters": [
     { "id": "all", "label": "Все", "category": "" },
-    { "id": "f-levels", "label": "Уровни", "category": "Уровни" },
     { "id": "f-method", "label": "Методика", "category": "Методика" },
     { "id": "f-warmup", "label": "Разминка", "category": "Разминка" },
     { "id": "f-comp", "label": "Соревнования", "category": "Соревнования" },

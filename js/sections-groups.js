@@ -25,7 +25,34 @@
   }
 
   function templateUsesMuscleGroups(template) {
-    return template !== 'dynamic-level' && template !== 'simple-block';
+    return template !== 'simple-block';
+  }
+
+  function templateIsDynamic(template) {
+    return template === 'dynamic-level';
+  }
+
+  function migrateDynamicItem(item) {
+    ensureItemMuscleGroups(item);
+    if (item.videos && item.videos.length) {
+      var target = item.groups[0];
+      if (target) {
+        if (!target.exercises) target.exercises = [];
+        if (!target.exercises.length) {
+          target.exercises.push({
+            id: uniqueId('ex'),
+            title: 'Элемент',
+            description: item.description || '',
+            goal: '',
+            principle: '',
+            errors: item.errors || '',
+            spotting: item.spotting || '',
+            videos: item.videos.slice(),
+          });
+        }
+      }
+    }
+    return item;
   }
 
   function migrateGroup(g) {
@@ -61,12 +88,15 @@
   function migrateSectionsData(data) {
     if (!data || !data.sections) return data;
     data.sections.forEach(function (sec) {
-      if (sec.template === 'dynamic-level') return;
       if (sec.template === 'static-level' || sec.template === 'sfpp-level') {
         sec.template = 'gpp-level';
       }
       (sec.items || []).forEach(function (item) {
-        ensureItemMuscleGroups(item);
+        if (sec.template === 'dynamic-level') {
+          migrateDynamicItem(item);
+        } else {
+          ensureItemMuscleGroups(item);
+        }
       });
     });
     return data;
@@ -76,6 +106,8 @@
     DEFAULT_GROUPS: DEFAULT_GROUPS,
     defaultMuscleGroups: defaultMuscleGroups,
     templateUsesMuscleGroups: templateUsesMuscleGroups,
+    templateIsDynamic: templateIsDynamic,
+    migrateDynamicItem: migrateDynamicItem,
     ensureItemMuscleGroups: ensureItemMuscleGroups,
     migrateSectionsData: migrateSectionsData,
     slugId: slugId,

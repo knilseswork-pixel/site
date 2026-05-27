@@ -1568,10 +1568,12 @@ body.detail-open .bottom-bar {
 }
 
 .gpp-exercise-btn:hover,
-.gpp-exercise-btn:focus-visible {
-  border-color: rgba(255, 45, 45, 0.45);
+.gpp-exercise-btn:focus-visible,
+.gpp-exercise-btn.is-active {
+  border-color: rgba(255, 45, 45, 0.75);
   background: var(--surface-2);
   outline: none;
+  box-shadow: 0 0 0 1px rgba(255, 45, 45, 0.35);
 }
 
 .gpp-exercise-detail__title {

@@ -22,7 +22,7 @@
   const $ = (sel, root = document) => (root || document).querySelector(sel);
   const $$ = (sel, root = document) => Array.prototype.slice.call(root.querySelectorAll(sel));
 
-  const CATEGORIES = ['Уровни', 'Методика', 'Разминка', 'Соревнования', 'Клиенты', 'Первая помощь'];
+  const CATEGORIES = ['Методика', 'Разминка', 'Соревнования', 'Клиенты', 'Первая помощь'];
 
 let editingId = null;
 
@@ -123,7 +123,7 @@ function openEditor(id = null) {
   if (window.WorkoutMain && window.WorkoutMain.populateCategorySelect) {
     window.WorkoutMain.populateCategorySelect();
   }
-  $('#editorCategory').value = article?.category || 'Уровни';
+  $('#editorCategory').value = article?.category || 'Методика';
   $('#editorBody').value = (article?.body || []).join('\n\n');
   $('#editorVideos').value = formatVideosForEditor(article?.videos || []);
 
