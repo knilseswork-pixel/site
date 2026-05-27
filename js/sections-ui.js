@@ -43,6 +43,11 @@
   function itemPreview(item, template) {
     if (hasContent(item.description)) return item.description.slice(0, 120) + '…';
     if (item.photo) return 'Есть фото';
+    if (template === 'dynamic-level') {
+      var els = item.elements || [];
+      if (els.length) return els.length + ' элементов';
+      return 'Добавьте элементы в админке';
+    }
     if (item.groups && item.groups.some(function (g) {
       return g.exercises && g.exercises.length;
     })) {
@@ -65,7 +70,9 @@
   function renderExerciseDetail(ex, tpl) {
     var html =
       '<div class="gpp-exercise-detail">' +
-      '<button type="button" class="gpp-back" data-gpp-back="list">← К списку упражнений</button>' +
+      '<button type="button" class="gpp-back" data-gpp-back="list">← ' +
+      (tpl === 'dynamic-level' ? 'К списку элементов' : 'К списку упражнений') +
+      '</button>' +
       '<h3 class="gpp-exercise-detail__title">' +
       escapeHtml(ex.title) +
       '</h3>';
@@ -154,6 +161,65 @@
         showList(btn.dataset.groupId);
       });
     });
+  }
+
+  function bindDynamicElementsNav(container, item) {
+    var listEl = container.querySelector('.dynamic-elements-list');
+    var detailEl = container.querySelector('.dynamic-element-view');
+    var listItems = container.querySelector('.dynamic-element-items');
+    var elements = item.elements || [];
+
+    function showList() {
+      listEl.classList.remove('hidden');
+      detailEl.classList.add('hidden');
+      detailEl.innerHTML = '';
+    }
+
+    if (listItems) {
+      listItems.innerHTML = elements.length
+        ? elements
+            .map(function (ex) {
+              return (
+                '<li><button type="button" class="gpp-exercise-btn" data-el-id="' +
+                escapeHtml(ex.id) +
+                '">' +
+                escapeHtml(ex.title) +
+                '</button></li>'
+              );
+            })
+            .join('')
+        : '<li class="gpp-exercise-empty">Пока нет элементов — добавьте в админке.</li>';
+
+      listItems.querySelectorAll('.gpp-exercise-btn').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          var ex = elements.find(function (e) {
+            return e.id === btn.dataset.elId;
+          });
+          if (!ex) return;
+          listItems.querySelectorAll('.gpp-exercise-btn').forEach(function (b) {
+            b.classList.remove('is-active');
+          });
+          btn.classList.add('is-active');
+          listEl.classList.add('hidden');
+          detailEl.classList.remove('hidden');
+          detailEl.innerHTML = renderExerciseDetail(ex, 'dynamic-level');
+          detailEl.querySelector('[data-gpp-back="list"]').addEventListener('click', showList);
+          detailEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        });
+      });
+    }
+  }
+
+  function renderDynamicElementsLevel(item) {
+    return (
+      '<div class="dynamic-level-ui gpp-level-ui" data-dynamic-level="1">' +
+      '<p class="gpp-level-ui__hint">Выберите элемент:</p>' +
+      '<div class="dynamic-elements-list gpp-exercise-list">' +
+      '<ul class="gpp-exercise-items dynamic-element-items"></ul>' +
+      '</div>' +
+      '<div class="dynamic-element-view gpp-exercise-view hidden"></div>' +
+      '</div>'
+    );
   }
 
   function renderGppExerciseLevel(item, tpl) {
@@ -307,22 +373,25 @@
         '"></div>';
     }
 
-    if (usesMuscleGroups(tpl)) {
-      if (window.SectionsGroups) {
-        if (tpl === 'dynamic-level') window.SectionsGroups.migrateDynamicItem(item);
-        else window.SectionsGroups.ensureItemMuscleGroups(item);
-      }
+    if (tpl === 'dynamic-level') {
+      if (window.SectionsGroups) window.SectionsGroups.ensureDynamicElements(item);
       if (hasContent(item.description)) {
         html += block('Описание уровня', '<p>' + textToHtml(item.description) + '</p>');
       }
-      if (hasContent(item.preparatoryExercises) && tpl !== 'dynamic-level') {
+      if (hasContent(item.spotting)) {
+        html += block('Страховка (общая для уровня)', '<p>' + textToHtml(item.spotting) + '</p>');
+      }
+      html += renderDynamicElementsLevel(item);
+    } else if (usesMuscleGroups(tpl)) {
+      if (window.SectionsGroups) window.SectionsGroups.ensureItemMuscleGroups(item);
+      if (hasContent(item.description)) {
+        html += block('Описание уровня', '<p>' + textToHtml(item.description) + '</p>');
+      }
+      if (hasContent(item.preparatoryExercises)) {
         html += block('Подводящие упражнения', '<p>' + textToHtml(item.preparatoryExercises) + '</p>');
       }
       if (hasContent(item.errors) && tpl === 'static-level') {
         html += block('Ошибки (общие)', '<p>' + textToHtml(item.errors) + '</p>');
-      }
-      if (tpl === 'dynamic-level' && hasContent(item.spotting)) {
-        html += block('Страховка (общая для уровня)', '<p>' + textToHtml(item.spotting) + '</p>');
       }
       html += renderGppExerciseLevel(item, tpl);
     } else if (tpl === 'simple-block') {
@@ -330,7 +399,9 @@
     }
 
     $('#detailContent').innerHTML = html || '<p class="prose">Контент пока не заполнен. Используйте админ-панель.</p>';
-    var gppRoot = $('#detailContent .gpp-level-ui');
+    var dynamicRoot = $('#detailContent .dynamic-level-ui');
+    if (dynamicRoot) bindDynamicElementsNav(dynamicRoot, item);
+    var gppRoot = $('#detailContent .gpp-level-ui:not(.dynamic-level-ui)');
     if (gppRoot) bindGppLevelNav(gppRoot, item, tpl);
     $('#detailVideos').innerHTML = '';
     $('#detailVideos').hidden = true;

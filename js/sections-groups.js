@@ -1,5 +1,5 @@
 /**
- * Группы мышц и упражнения в «Базе элементов»
+ * Группы мышц (ОФП, статика) и элементы (динамика)
  */
 (function () {
   var DEFAULT_GROUPS = [
@@ -25,33 +25,57 @@
   }
 
   function templateUsesMuscleGroups(template) {
-    return template !== 'simple-block';
+    return template !== 'dynamic-level' && template !== 'simple-block';
   }
 
   function templateIsDynamic(template) {
     return template === 'dynamic-level';
   }
 
-  function migrateDynamicItem(item) {
-    ensureItemMuscleGroups(item);
-    if (item.videos && item.videos.length) {
-      var target = item.groups[0];
-      if (target) {
-        if (!target.exercises) target.exercises = [];
-        if (!target.exercises.length) {
-          target.exercises.push({
-            id: uniqueId('ex'),
-            title: 'Элемент',
-            description: item.description || '',
-            goal: '',
-            principle: '',
-            errors: item.errors || '',
-            spotting: item.spotting || '',
-            videos: item.videos.slice(),
-          });
-        }
-      }
+  function flattenGroupsToElements(item) {
+    var list = [];
+    (item.groups || []).forEach(function (g) {
+      (g.exercises || []).forEach(function (ex) {
+        list.push(ex);
+      });
+    });
+    return list;
+  }
+
+  function ensureDynamicElements(item) {
+    if (Array.isArray(item.elements) && item.elements.length) {
+      item.elements = item.elements.map(function (ex) {
+        return {
+          id: ex.id || uniqueId('el'),
+          title: ex.title || 'Элемент',
+          description: ex.description || '',
+          goal: ex.goal || '',
+          principle: ex.principle || '',
+          errors: ex.errors || '',
+          spotting: ex.spotting || '',
+          videos: Array.isArray(ex.videos) ? ex.videos : [],
+        };
+      });
+    } else if (item.groups && item.groups.length) {
+      item.elements = flattenGroupsToElements(item);
+    } else if (item.videos && item.videos.length) {
+      item.elements = [
+        {
+          id: uniqueId('el'),
+          title: 'Элемент',
+          description: item.description || '',
+          goal: '',
+          principle: '',
+          errors: item.errors || '',
+          spotting: item.spotting || '',
+          videos: item.videos.slice(),
+        },
+      ];
+    } else {
+      item.elements = [];
     }
+    delete item.groups;
+    delete item.videos;
     return item;
   }
 
@@ -93,8 +117,8 @@
       }
       (sec.items || []).forEach(function (item) {
         if (sec.template === 'dynamic-level') {
-          migrateDynamicItem(item);
-        } else {
+          ensureDynamicElements(item);
+        } else if (templateUsesMuscleGroups(sec.template)) {
           ensureItemMuscleGroups(item);
         }
       });
@@ -107,7 +131,7 @@
     defaultMuscleGroups: defaultMuscleGroups,
     templateUsesMuscleGroups: templateUsesMuscleGroups,
     templateIsDynamic: templateIsDynamic,
-    migrateDynamicItem: migrateDynamicItem,
+    ensureDynamicElements: ensureDynamicElements,
     ensureItemMuscleGroups: ensureItemMuscleGroups,
     migrateSectionsData: migrateSectionsData,
     slugId: slugId,

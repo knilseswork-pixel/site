@@ -115,23 +115,102 @@
     if (ed) ed.classList.add('hidden');
   }
 
-  function renderGroupsEditor(groups, tpl) {
-    var isDynamic = tpl === 'dynamic-level';
-    var exLabel = isDynamic ? 'Элемент' : 'Упражнение';
+  function renderDynamicElementBlock(ex) {
+    return (
+      '<div class="admin-exercise-block" data-el-id="' +
+      escapeHtml(ex.id) +
+      '">' +
+      '<div class="admin-exercise-block__head">' +
+      '<strong>Элемент</strong>' +
+      '<button type="button" class="admin-btn admin-btn--sm admin-btn--danger" data-action="del-element">Удалить</button>' +
+      '</div>' +
+      '<label class="admin-field">Название элемента<input type="text" data-f="title" value="' +
+      escapeHtml(ex.title) +
+      '"></label>' +
+      '<label class="admin-field">Описание<textarea data-f="description" rows="3">' +
+      escapeHtml(ex.description) +
+      '</textarea></label>' +
+      '<label class="admin-field">Цель<textarea data-f="goal" rows="2">' +
+      escapeHtml(ex.goal) +
+      '</textarea></label>' +
+      '<label class="admin-field">Принцип действия<textarea data-f="principle" rows="2">' +
+      escapeHtml(ex.principle) +
+      '</textarea></label>' +
+      '<label class="admin-field">Ошибки<textarea data-f="errors" rows="2">' +
+      escapeHtml(ex.errors) +
+      '</textarea></label>' +
+      '<label class="admin-field">Страховка<textarea data-f="spotting" rows="2">' +
+      escapeHtml(ex.spotting || '') +
+      '</textarea></label>' +
+      '<label class="admin-field">Видео <span class="label-hint">Название | ссылка VK / Drive</span>' +
+      '<textarea data-f="videos" rows="2">' +
+      escapeHtml(formatVideosForEditor(ex.videos || [])) +
+      '</textarea></label>' +
+      '</div>'
+    );
+  }
+
+  function renderDynamicElementsEditor(elements) {
+    return (elements || []).map(renderDynamicElementBlock).join('');
+  }
+
+  function collectDynamicElementsFromDom(root) {
+    if (!root) return [];
+    var SG = window.SectionsGroups;
+    var list = [];
+    root.querySelectorAll('.admin-exercise-block').forEach(function (block) {
+      function val(name) {
+        var el = block.querySelector('[data-f="' + name + '"]');
+        return el ? el.value.trim() : '';
+      }
+      var videosEl = block.querySelector('[data-f="videos"]');
+      list.push({
+        id: block.getAttribute('data-el-id') || (SG ? SG.uniqueId('el') : 'el-' + Date.now()),
+        title: val('title') || 'Элемент',
+        description: val('description'),
+        goal: val('goal'),
+        principle: val('principle'),
+        errors: val('errors'),
+        spotting: val('spotting'),
+        videos: parseVideosFromEditor(videosEl ? videosEl.value : ''),
+      });
+    });
+    return list;
+  }
+
+  function refreshDynamicElementsEditor(elements) {
+    var root = $('#secElementsRoot');
+    if (root) root.innerHTML = renderDynamicElementsEditor(elements);
+  }
+
+  function bindDynamicElementsEditorEvents(force) {
+    var root = $('#secElementsRoot');
+    if (!root || (!force && root.dataset.bound === '1')) return;
+    root.dataset.bound = '1';
+
+    root.addEventListener('click', function (e) {
+      var btn = e.target.closest('[data-action]');
+      if (!btn || !root.contains(btn)) return;
+      var action = btn.getAttribute('data-action');
+      var elements = collectDynamicElementsFromDom(root);
+      var SG = window.SectionsGroups;
+
+      if (action === 'del-element') {
+        var block = btn.closest('.admin-exercise-block');
+        var elId = block && block.getAttribute('data-el-id');
+        elements = elements.filter(function (ex) {
+          return ex.id !== elId;
+        });
+        refreshDynamicElementsEditor(elements);
+      }
+    });
+  }
+
+  function renderGroupsEditor(groups) {
     return (groups || [])
       .map(function (g) {
         var exercises = (g.exercises || [])
           .map(function (ex) {
-            var extra =
-              isDynamic
-                ? '<label class="admin-field">Видео <span class="label-hint">Название | ссылка VK / Drive</span>' +
-                  '<textarea data-f="videos" rows="2">' +
-                  escapeHtml(formatVideosForEditor(ex.videos || [])) +
-                  '</textarea></label>' +
-                  '<label class="admin-field">Страховка<textarea data-f="spotting" rows="2">' +
-                  escapeHtml(ex.spotting || '') +
-                  '</textarea></label>'
-                : '';
             return (
               '<div class="admin-exercise-block" data-ex-id="' +
               escapeHtml(ex.id) +
@@ -157,7 +236,6 @@
               '<label class="admin-field">Ошибки<textarea data-f="errors" rows="2">' +
               escapeHtml(ex.errors) +
               '</textarea></label>' +
-              extra +
               '</div>'
             );
           })
@@ -175,16 +253,14 @@
           '<div class="sec-exercises-list">' +
           exercises +
           '</div>' +
-          '<button type="button" class="admin-btn admin-btn--sm" data-action="add-exercise">+ ' +
-          exLabel +
-          '</button>' +
+          '<button type="button" class="admin-btn admin-btn--sm" data-action="add-exercise">+ Упражнение</button>' +
           '</fieldset>'
         );
       })
       .join('');
   }
 
-  function collectGroupsFromDom(root, tpl) {
+  function collectGroupsFromDom(root) {
     if (!root) return [];
     var SG = window.SectionsGroups;
     var groups = [];
@@ -200,20 +276,14 @@
           var el = exBlock.querySelector('[data-f="' + name + '"]');
           return el ? el.value.trim() : '';
         }
-        var ex = {
+        g.exercises.push({
           id: exBlock.getAttribute('data-ex-id') || (SG ? SG.uniqueId('ex') : 'ex-' + Date.now()),
-          title: val('title') || (tpl === 'dynamic-level' ? 'Элемент' : 'Упражнение'),
+          title: val('title') || 'Упражнение',
           description: val('description'),
           goal: val('goal'),
           principle: val('principle'),
           errors: val('errors'),
-        };
-        if (tpl === 'dynamic-level') {
-          var videosEl = exBlock.querySelector('[data-f="videos"]');
-          ex.videos = parseVideosFromEditor(videosEl ? videosEl.value : '');
-          ex.spotting = val('spotting');
-        }
-        g.exercises.push(ex);
+        });
       });
       groups.push(g);
     });
@@ -222,7 +292,7 @@
 
   function refreshGroupsEditor(groups) {
     var root = $('#secGroupsRoot');
-    if (root) root.innerHTML = renderGroupsEditor(groups, editingSectionTemplate);
+    if (root) root.innerHTML = renderGroupsEditor(groups);
   }
 
   function bindGroupsEditorEvents(force) {
@@ -234,7 +304,7 @@
       var btn = e.target.closest('[data-action]');
       if (!btn || !root.contains(btn)) return;
       var action = btn.getAttribute('data-action');
-      var groups = collectGroupsFromDom(root, editingSectionTemplate);
+      var groups = collectGroupsFromDom(root);
       var SG = window.SectionsGroups;
       var groupField = btn.closest('.admin-group-block');
 
@@ -246,13 +316,11 @@
         if (g) {
           g.exercises.push({
             id: SG ? SG.uniqueId('ex') : 'ex-' + Date.now(),
-            title: editingSectionTemplate === 'dynamic-level' ? 'Новый элемент' : 'Новое упражнение',
+            title: 'Новое упражнение',
             description: '',
             goal: '',
             principle: '',
             errors: '',
-            spotting: '',
-            videos: [],
           });
         }
         refreshGroupsEditor(groups);
@@ -325,19 +393,23 @@
     var html = field('Фото (путь, или ссылка Google Drive «Поделиться»)', 'secPhoto', item.photo || '', 0);
     var usesGroups = window.SectionsGroups && window.SectionsGroups.templateUsesMuscleGroups(tpl);
 
-    if (usesGroups) {
-      if (tpl === 'dynamic-level') window.SectionsGroups.migrateDynamicItem(item);
-      else window.SectionsGroups.ensureItemMuscleGroups(item);
+    if (tpl === 'dynamic-level') {
+      window.SectionsGroups.ensureDynamicElements(item);
       html += field('Краткое описание уровня (необязательно)', 'secDescription', item.description || '', 3);
-      if (tpl === 'dynamic-level') {
-        html += field('Страховка для всего уровня (необязательно)', 'secSpotting', item.spotting || '', 3);
-      }
+      html += field('Страховка для всего уровня (необязательно)', 'secSpotting', item.spotting || '', 3);
       html +=
-        '<p class="admin-help">Группы мышц и ' +
-        (tpl === 'dynamic-level' ? 'элементы' : 'упражнения') +
-        ' — как в ОФП. Можно добавлять свои группы и пункты.</p>' +
+        '<p class="admin-help">Список динамических элементов — без групп мышц. Добавляйте элементы по одному.</p>' +
+        '<div id="secElementsRoot" class="sec-elements-root">' +
+        renderDynamicElementsEditor(item.elements) +
+        '</div>' +
+        '<p><button type="button" class="admin-btn admin-btn--sm" id="secAddElement">+ Добавить элемент</button></p>';
+    } else if (usesGroups) {
+      window.SectionsGroups.ensureItemMuscleGroups(item);
+      html += field('Краткое описание уровня (необязательно)', 'secDescription', item.description || '', 3);
+      html +=
+        '<p class="admin-help">Группы мышц и упражнения — как в ОФП. Можно добавлять свои группы и пункты.</p>' +
         '<div id="secGroupsRoot" class="sec-groups-root">' +
-        renderGroupsEditor(item.groups, tpl) +
+        renderGroupsEditor(item.groups) +
         '</div>' +
         '<p><button type="button" class="admin-btn admin-btn--sm" id="secAddGroup">+ Добавить группу мышц</button></p>';
     } else if (tpl === 'simple-block') {
@@ -345,7 +417,31 @@
     }
 
     host.innerHTML = html;
-    if (usesGroups) {
+    if (tpl === 'dynamic-level') {
+      var elementsRoot = $('#secElementsRoot');
+      if (elementsRoot) elementsRoot.dataset.bound = '';
+      bindDynamicElementsEditorEvents(true);
+      var addElBtn = $('#secAddElement');
+      if (addElBtn) {
+        addElBtn.onclick = function () {
+          var root = $('#secElementsRoot');
+          if (!root) return;
+          var elements = collectDynamicElementsFromDom(root);
+          var SG = window.SectionsGroups;
+          elements.push({
+            id: SG ? SG.uniqueId('el') : 'el-' + Date.now(),
+            title: 'Новый элемент',
+            description: '',
+            goal: '',
+            principle: '',
+            errors: '',
+            spotting: '',
+            videos: [],
+          });
+          refreshDynamicElementsEditor(elements);
+        };
+      }
+    } else if (usesGroups) {
       var groupsRoot = $('#secGroupsRoot');
       if (groupsRoot) groupsRoot.dataset.bound = '';
       bindGroupsEditorEvents(true);
@@ -354,7 +450,7 @@
         addGroupBtn.onclick = function () {
           var root = $('#secGroupsRoot');
           if (!root) return;
-          var groups = collectGroupsFromDom(root, editingSectionTemplate);
+          var groups = collectGroupsFromDom(root);
           var SG = window.SectionsGroups;
           groups.push({
             id: SG ? SG.uniqueId('group') : 'group-' + Date.now(),
@@ -378,16 +474,20 @@
     var photoEl = $('#secPhoto');
     if (photoEl) item.photo = photoEl.value.trim();
 
-    var usesGroups = window.SectionsGroups && window.SectionsGroups.templateUsesMuscleGroups(tpl);
-    if (usesGroups) {
+    if (tpl === 'dynamic-level') {
       item.description = ($('#secDescription') || {}).value || '';
-      item.groups = collectGroupsFromDom($('#secGroupsRoot'), tpl);
+      item.spotting = ($('#secSpotting') || {}).value || '';
+      item.elements = collectDynamicElementsFromDom($('#secElementsRoot'));
+      delete item.groups;
+      delete item.videos;
+      delete item.preparatoryExercises;
+      delete item.errors;
+    } else if (window.SectionsGroups && window.SectionsGroups.templateUsesMuscleGroups(tpl)) {
+      item.description = ($('#secDescription') || {}).value || '';
+      item.groups = collectGroupsFromDom($('#secGroupsRoot'));
       delete item.preparatoryExercises;
       delete item.videos;
-      if (tpl === 'dynamic-level') {
-        item.spotting = ($('#secSpotting') || {}).value || '';
-        delete item.errors;
-      }
+      delete item.elements;
     } else if (tpl === 'simple-block') {
       item.description = ($('#secDescription') || {}).value || '';
     }
