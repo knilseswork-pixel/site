@@ -16,7 +16,8 @@ window.WORKOUT_SITE_CONFIG = {
     { "id": "f-method", "label": "Методика", "category": "Методика" },
     { "id": "f-warmup", "label": "Разминка", "category": "Разминка" },
     { "id": "f-comp", "label": "Соревнования", "category": "Соревнования" },
-    { "id": "f-clients", "label": "Клиенты", "category": "Клиенты" }
+    { "id": "f-clients", "label": "Клиенты", "category": "Клиенты" },
+    { "id": "f-first-aid", "label": "Первая помощь", "category": "Первая помощь" }
   ],
   "customPages": []
 };

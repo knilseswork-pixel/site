@@ -81,6 +81,35 @@
       window.matchMedia('(pointer: coarse)').matches;
   }
 
+  function isDriveMedia(url) {
+    return window.WorkoutMedia && window.WorkoutMedia.isDriveUrl(url);
+  }
+
+  function renderDriveVideoBlock(title, embedUrl, openUrl) {
+    var safeEmbed = embedUrl.replace(/"/g, '&quot;');
+    var safeOpen = openUrl.replace(/"/g, '&quot;');
+    if (isMobileViewer()) {
+      return (
+        '<div class="video-block video-block--drive-mobile">' +
+        '<h3>' + title + '</h3>' +
+        '<a class="vk-open-card" href="' + safeOpen + '" target="_blank" rel="noopener noreferrer">' +
+        '<span class="vk-open-card__icon" aria-hidden="true">▶</span>' +
+        '<span class="vk-open-card__text">Смотреть в Google Drive</span>' +
+        '<span class="vk-open-card__sub">Файл должен быть доступен по ссылке</span>' +
+        '</a></div>'
+      );
+    }
+    return (
+      '<div class="video-block video-block--drive">' +
+      '<h3>' + title + '</h3>' +
+      '<div class="video-frame-wrap">' +
+      '<iframe src="' + safeEmbed + '" allow="autoplay; encrypted-media; fullscreen" allowfullscreen loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>' +
+      '</div>' +
+      '<a class="vk-open-link" href="' + safeOpen + '" target="_blank" rel="noopener noreferrer">Открыть в Google Drive</a>' +
+      '</div>'
+    );
+  }
+
   function vkEmbedToWatchUrl(embed) {
     try {
       var u = new URL(embed, window.location.href);
@@ -99,14 +128,35 @@
 
   function renderVideoBlock(v) {
     var title = escapeHtml(v.title || 'Видео');
+    var WM = window.WorkoutMedia;
     if (v.src) {
-      var src = videoSrc(v.src);
+      var rawSrc = v.src;
+      if (WM && WM.isDriveUrl(rawSrc)) {
+        var driveFromSrc = WM.normalizeVideo(rawSrc);
+        if (driveFromSrc.type === 'embed') {
+          return renderDriveVideoBlock(title, driveFromSrc.url, driveFromSrc.openUrl || WM.driveOpenUrl(rawSrc));
+        }
+      }
+      var src = videoSrc(rawSrc);
       return (
         '<div class="video-block"><h3>' + title + '</h3>' +
-        '<video class="video-player" controls playsinline preload="metadata" src="' + src + '"></video></div>'
+        '<video class="video-player" controls playsinline preload="metadata" src="' + escapeHtml(src) + '"></video></div>'
       );
     }
     if (v.embed) {
+      if (isDriveMedia(v.embed)) {
+        var openDrive = WM ? WM.driveOpenUrl(v.embed) : v.embed;
+        var previewDrive = v.embed;
+        if (WM) {
+          var normDrive = WM.normalizeVideo(v.embed);
+          if (normDrive.type === 'embed') {
+            previewDrive = normDrive.url;
+            openDrive = normDrive.openUrl || openDrive;
+          }
+        }
+        return renderDriveVideoBlock(title, previewDrive, openDrive);
+      }
+
       var watchUrl = vkEmbedToWatchUrl(v.embed);
       var safeEmbed = v.embed.replace(/"/g, '&quot;');
       var safeWatch = watchUrl.replace(/"/g, '&quot;');
@@ -486,7 +536,7 @@
       cats = window.SiteConfigStore.getCategories();
     }
     if (!cats.length) {
-      cats = ['Уровни', 'Методика', 'Разминка', 'Соревнования', 'Клиенты'];
+      cats = ['Уровни', 'Методика', 'Разминка', 'Соревнования', 'Клиенты', 'Первая помощь'];
     }
     sel.innerHTML = cats
       .map(function (c) {

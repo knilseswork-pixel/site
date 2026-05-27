@@ -11,7 +11,7 @@
   let contentData = null;
   let adminConfig = null;
 
-  var HUB_ARTICLE_IDS = ['competition-hub', 'new-client-hub'];
+  var HUB_ARTICLE_IDS = ['competition-hub', 'new-client-hub', 'first-aid-hub'];
 
   var HUB_ARTICLES_FALLBACK = [
     {
@@ -71,6 +71,28 @@
         },
       ],
     },
+    {
+      id: 'first-aid-hub',
+      title: 'Оказание первой помощи',
+      excerpt: 'Действия тренера · экстренные ситуации · самочувствие подопечного',
+      date: '2024-01-12',
+      views: 0,
+      category: 'Первая помощь',
+      type: 'hub',
+      accent: '#FF2D2D',
+      body: [],
+      videos: [],
+      items: [
+        { id: 'emergency', title: 'Действия тренера в чрезвычайных ситуациях', body: [], videos: [] },
+        { id: 'feeling-bad', title: 'Действия тренера если подопечному стало плохо', body: [], videos: [] },
+        {
+          id: 'wellness-monitor',
+          title: 'Как отследить и предотвратить ухудшение самочувствия',
+          body: [],
+          videos: [],
+        },
+      ],
+    },
   ];
 
   function cloneData(obj) {
@@ -84,7 +106,7 @@
         return HUB_ARTICLE_IDS.indexOf(a.id) >= 0;
       })
       .map(cloneData);
-    if (list.length >= 2) return list;
+    if (list.length >= HUB_ARTICLE_IDS.length) return list;
 
     if (fallbackSource && fallbackSource.articles) {
       list = fallbackSource.articles
@@ -92,7 +114,7 @@
           return HUB_ARTICLE_IDS.indexOf(a.id) >= 0;
         })
         .map(cloneData);
-      if (list.length >= 2) return list;
+      if (list.length >= HUB_ARTICLE_IDS.length) return list;
     }
 
     return HUB_ARTICLES_FALLBACK.map(cloneData);
@@ -297,6 +319,11 @@
     migrateSectionsToArticles();
     mergeLegacyHubArticles();
     ensureHubArticles(serverData);
+    if (contentData && contentData.articles) {
+      contentData.articles = contentData.articles.filter(function (a) {
+        return a.id !== 'warmup-2';
+      });
+    }
     return contentData;
   }
 

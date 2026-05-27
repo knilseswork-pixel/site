@@ -160,8 +160,8 @@
               <textarea id="editorBody" rows="6"></textarea>
             </label>
             <div id="editorHubItems" class="editor-hub-items hidden"></div>
-            <label>Видео VK <span class="label-hint">строка: Название | ссылка или код iframe</span>
-              <textarea id="editorVideos" rows="4" placeholder="Подтягивания 1 | https://vk.com/video_ext.php?..."></textarea>
+            <label>Видео <span class="label-hint">строка: Название | ссылка VK, YouTube или Google Drive</span>
+              <textarea id="editorVideos" rows="4" placeholder="Упражнение | https://drive.google.com/file/d/.../view?usp=sharing"></textarea>
             </label>
             <div class="admin-editor__actions">
               <button type="button" class="admin-btn admin-btn--primary" id="editorSave">Сохранить</button>
@@ -247,8 +247,9 @@
 
   <script>
     (function () {
-      var BUILD = '20260527c';
+      var BUILD = '20260528a';
       var scripts = [
+        'js/media-url.js',
         'js/github-push.js',
         'js/site-config-data.js',
         'js/content-data.js',
@@ -256,6 +257,7 @@
         'js/sections-data.js',
         'js/site-config-store.js',
         'js/content-store.js',
+        'js/sections-groups.js',
         'js/sections-store.js',
         'js/admin.js',
         'js/sections-admin.js',

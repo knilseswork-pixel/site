@@ -51,6 +51,10 @@
       }
       var iframe = url.match(/src=["']([^"']+)["']/i);
       if (iframe) url = iframe[1];
+      if (window.WorkoutMedia && window.WorkoutMedia.isDriveUrl(url)) {
+        var norm = window.WorkoutMedia.normalizeVideo(url);
+        if (norm.type === 'embed') return { title: title, embed: norm.url };
+      }
       if (/vk\.com|youtube|youtu\.be/i.test(url)) {
         return { title: title, embed: url };
       }
@@ -109,6 +113,148 @@
     if (ed) ed.classList.add('hidden');
   }
 
+  function renderGroupsEditor(groups) {
+    return (groups || [])
+      .map(function (g) {
+        var exercises = (g.exercises || [])
+          .map(function (ex) {
+            return (
+              '<div class="admin-exercise-block" data-ex-id="' +
+              escapeHtml(ex.id) +
+              '">' +
+              '<div class="admin-exercise-block__head">' +
+              '<strong>Упражнение</strong>' +
+              '<button type="button" class="admin-btn admin-btn--sm admin-btn--danger" data-action="del-exercise">Удалить</button>' +
+              '</div>' +
+              '<label class="admin-field">Название<input type="text" data-f="title" value="' +
+              escapeHtml(ex.title) +
+              '"></label>' +
+              '<label class="admin-field">Описание<textarea data-f="description" rows="3">' +
+              escapeHtml(ex.description) +
+              '</textarea></label>' +
+              '<label class="admin-field">Цель<textarea data-f="goal" rows="2">' +
+              escapeHtml(ex.goal) +
+              '</textarea></label>' +
+              '<label class="admin-field">Принцип действия<textarea data-f="principle" rows="2">' +
+              escapeHtml(ex.principle) +
+              '</textarea></label>' +
+              '<label class="admin-field">Ошибки<textarea data-f="errors" rows="2">' +
+              escapeHtml(ex.errors) +
+              '</textarea></label>' +
+              '</div>'
+            );
+          })
+          .join('');
+        return (
+          '<fieldset class="admin-group-block" data-group-id="' +
+          escapeHtml(g.id) +
+          '">' +
+          '<div class="admin-group-block__head">' +
+          '<label class="admin-field admin-field--grow">Группа мышц<input type="text" data-f="label" value="' +
+          escapeHtml(g.label) +
+          '"></label>' +
+          '<button type="button" class="admin-btn admin-btn--sm admin-btn--danger" data-action="del-group">Удалить группу</button>' +
+          '</div>' +
+          '<div class="sec-exercises-list">' +
+          exercises +
+          '</div>' +
+          '<button type="button" class="admin-btn admin-btn--sm" data-action="add-exercise">+ Упражнение</button>' +
+          '</fieldset>'
+        );
+      })
+      .join('');
+  }
+
+  function collectGroupsFromDom(root) {
+    if (!root) return [];
+    var SG = window.SectionsGroups;
+    var groups = [];
+    root.querySelectorAll('.admin-group-block').forEach(function (fld) {
+      var labelInput = fld.querySelector('[data-f="label"]');
+      var g = {
+        id: fld.getAttribute('data-group-id') || (SG ? SG.uniqueId('group') : 'group-' + Date.now()),
+        label: labelInput ? labelInput.value.trim() : 'Группа',
+        exercises: [],
+      };
+      fld.querySelectorAll('.admin-exercise-block').forEach(function (exBlock) {
+        function val(name) {
+          var el = exBlock.querySelector('[data-f="' + name + '"]');
+          return el ? el.value.trim() : '';
+        }
+        g.exercises.push({
+          id: exBlock.getAttribute('data-ex-id') || (SG ? SG.uniqueId('ex') : 'ex-' + Date.now()),
+          title: val('title') || 'Упражнение',
+          description: val('description'),
+          goal: val('goal'),
+          principle: val('principle'),
+          errors: val('errors'),
+        });
+      });
+      groups.push(g);
+    });
+    return groups;
+  }
+
+  function refreshGroupsEditor(groups) {
+    var root = $('#secGroupsRoot');
+    if (root) root.innerHTML = renderGroupsEditor(groups);
+  }
+
+  function bindGroupsEditorEvents(force) {
+    var root = $('#secGroupsRoot');
+    if (!root || (!force && root.dataset.bound === '1')) return;
+    root.dataset.bound = '1';
+
+    root.addEventListener('click', function (e) {
+      var btn = e.target.closest('[data-action]');
+      if (!btn || !root.contains(btn)) return;
+      var action = btn.getAttribute('data-action');
+      var groups = collectGroupsFromDom(root);
+      var SG = window.SectionsGroups;
+      var groupField = btn.closest('.admin-group-block');
+
+      if (action === 'add-exercise' && groupField) {
+        var gid = groupField.getAttribute('data-group-id');
+        var g = groups.find(function (x) {
+          return x.id === gid;
+        });
+        if (g) {
+          g.exercises.push({
+            id: SG ? SG.uniqueId('ex') : 'ex-' + Date.now(),
+            title: 'Новое упражнение',
+            description: '',
+            goal: '',
+            principle: '',
+            errors: '',
+          });
+        }
+        refreshGroupsEditor(groups);
+        return;
+      }
+
+      if (action === 'del-exercise') {
+        var exBlock = btn.closest('.admin-exercise-block');
+        var exId = exBlock && exBlock.getAttribute('data-ex-id');
+        groups.forEach(function (g) {
+          g.exercises = (g.exercises || []).filter(function (ex) {
+            return ex.id !== exId;
+          });
+        });
+        refreshGroupsEditor(groups);
+        return;
+      }
+
+      if (action === 'del-group') {
+        var delGid = groupField && groupField.getAttribute('data-group-id');
+        groups = groups.filter(function (g) {
+          return g.id !== delGid;
+        });
+        refreshGroupsEditor(groups);
+        return;
+      }
+    });
+  }
+
   function field(label, id, value, rows) {
     if (rows) {
       return (
@@ -148,19 +294,25 @@
 
     if (titleEl) titleEl.textContent = sec.title + ' → ' + item.title;
 
-    var html = field('Фото (URL или путь, напр. images/prep.jpg)', 'secPhoto', item.photo || '', 0);
+    var html = field('Фото (путь, или ссылка Google Drive «Поделиться»)', 'secPhoto', item.photo || '', 0);
+    var usesGroups = window.SectionsGroups && window.SectionsGroups.templateUsesMuscleGroups(tpl);
 
-    if (tpl === 'static-level' || tpl === 'simple-block') {
+    if (usesGroups) {
+      window.SectionsGroups.ensureItemMuscleGroups(item);
+      html += field('Краткое описание уровня (необязательно)', 'secDescription', item.description || '', 3);
+      html +=
+        '<p class="admin-help">Группы мышц и упражнения — как в ОФП. Можно добавлять свои группы и упражнения.</p>' +
+        '<div id="secGroupsRoot" class="sec-groups-root">' +
+        renderGroupsEditor(item.groups) +
+        '</div>' +
+        '<p><button type="button" class="admin-btn admin-btn--sm" id="secAddGroup">+ Добавить группу мышц</button></p>';
+    } else if (tpl === 'simple-block') {
       html += field('Описание', 'secDescription', item.description || '', 5);
-      if (tpl === 'static-level') {
-        html += field('Подводящие упражнения', 'secPrep', item.preparatoryExercises || '', 4);
-        html += field('Ошибки', 'secErrors', item.errors || '', 4);
-      }
     }
 
     if (tpl === 'dynamic-level') {
       html +=
-        '<label class="admin-field">Видео VK <span class="label-hint">Название | ссылка или iframe</span>' +
+        '<label class="admin-field">Видео <span class="label-hint">Название | VK, YouTube или Google Drive</span>' +
         '<textarea id="secVideos" rows="4">' +
         escapeHtml(formatVideosForEditor(item.videos)) +
         '</textarea></label>';
@@ -170,37 +322,27 @@
       html += field('Страховка', 'secSpotting', item.spotting || '', 4);
     }
 
-    if (tpl === 'gpp-level' || tpl === 'sfpp-level') {
-      (item.groups || []).forEach(function (g, idx) {
-        html += '<div class="admin-group-block" data-group-idx="' + idx + '">';
-        html += '<h4 class="admin-group-block__title">' + escapeHtml(g.label) + '</h4>';
-        if (g.exercises && g.exercises.length) {
-          g.exercises.forEach(function (ex, exIdx) {
-            html += '<div class="admin-exercise-block">';
-            html += '<h5>Упражнение ' + (exIdx + 1) + '</h5>';
-            html += field('Название', 'secG' + idx + 'ex' + exIdx + 'title', ex.title || '', 0);
-            html += field('Описание', 'secG' + idx + 'ex' + exIdx + 'desc', ex.description || '', 3);
-            html += field('Цель', 'secG' + idx + 'ex' + exIdx + 'goal', ex.goal || '', 2);
-            if (tpl === 'gpp-level') {
-              html += field('Принцип действия', 'secG' + idx + 'ex' + exIdx + 'principle', ex.principle || '', 2);
-              html += field('Ошибки', 'secG' + idx + 'ex' + exIdx + 'errors', ex.errors || '', 2);
-            }
-            html += '</div>';
-          });
-        } else {
-          html += field('Фото', 'secGphoto' + idx, g.photo || '', 0);
-          html += field('Описание', 'secGdesc' + idx, g.description || '', 3);
-          html += field('Цель' + (tpl === 'gpp-level' ? '' : ' упражнения'), 'secGgoal' + idx, g.goal || '', 2);
-          if (tpl === 'gpp-level') {
-            html += field('Принцип действия', 'secGprinciple' + idx, g.principle || '', 2);
-            html += field('Ошибки', 'secGerrors' + idx, g.errors || '', 2);
-          }
-        }
-        html += '</div>';
-      });
-    }
-
     host.innerHTML = html;
+    if (usesGroups) {
+      var groupsRoot = $('#secGroupsRoot');
+      if (groupsRoot) groupsRoot.dataset.bound = '';
+      bindGroupsEditorEvents(true);
+      var addGroupBtn = $('#secAddGroup');
+      if (addGroupBtn) {
+        addGroupBtn.onclick = function () {
+          var root = $('#secGroupsRoot');
+          if (!root) return;
+          var groups = collectGroupsFromDom(root);
+          var SG = window.SectionsGroups;
+          groups.push({
+            id: SG ? SG.uniqueId('group') : 'group-' + Date.now(),
+            label: 'Новая группа',
+            exercises: [],
+          });
+          refreshGroupsEditor(groups);
+        };
+      }
+    }
     $('#adminSectionEditor').classList.remove('hidden');
     host.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   }
@@ -214,12 +356,13 @@
     var photoEl = $('#secPhoto');
     if (photoEl) item.photo = photoEl.value.trim();
 
-    if (tpl === 'static-level' || tpl === 'simple-block') {
+    var usesGroups = window.SectionsGroups && window.SectionsGroups.templateUsesMuscleGroups(tpl);
+    if (usesGroups) {
       item.description = ($('#secDescription') || {}).value || '';
-      if (tpl === 'static-level') {
-        item.preparatoryExercises = ($('#secPrep') || {}).value || '';
-        item.errors = ($('#secErrors') || {}).value || '';
-      }
+      item.groups = collectGroupsFromDom($('#secGroupsRoot'));
+      delete item.preparatoryExercises;
+    } else if (tpl === 'simple-block') {
+      item.description = ($('#secDescription') || {}).value || '';
     }
 
     if (tpl === 'dynamic-level') {
@@ -228,40 +371,6 @@
       item.preparatoryExercises = ($('#secPrep') || {}).value || '';
       item.errors = ($('#secErrors') || {}).value || '';
       item.spotting = ($('#secSpotting') || {}).value || '';
-    }
-
-    if (tpl === 'gpp-level' || tpl === 'sfpp-level') {
-      (item.groups || []).forEach(function (g, idx) {
-        if (g.exercises && g.exercises.length) {
-          g.exercises.forEach(function (ex, exIdx) {
-            var t = $('#secG' + idx + 'ex' + exIdx + 'title');
-            var d = $('#secG' + idx + 'ex' + exIdx + 'desc');
-            var goal = $('#secG' + idx + 'ex' + exIdx + 'goal');
-            if (t) ex.title = t.value.trim();
-            if (d) ex.description = d.value.trim();
-            if (goal) ex.goal = goal.value.trim();
-            if (tpl === 'gpp-level') {
-              var pr = $('#secG' + idx + 'ex' + exIdx + 'principle');
-              var er = $('#secG' + idx + 'ex' + exIdx + 'errors');
-              if (pr) ex.principle = pr.value.trim();
-              if (er) ex.errors = er.value.trim();
-            }
-          });
-        } else {
-          var p = $('#secGphoto' + idx);
-          var d = $('#secGdesc' + idx);
-          var goal = $('#secGgoal' + idx);
-          if (p) g.photo = p.value.trim();
-          if (d) g.description = d.value.trim();
-          if (goal) g.goal = goal.value.trim();
-          if (tpl === 'gpp-level') {
-            var pr = $('#secGprinciple' + idx);
-            var er = $('#secGerrors' + idx);
-            if (pr) g.principle = pr.value.trim();
-            if (er) g.errors = er.value.trim();
-          }
-        }
-      });
     }
 
     return item;

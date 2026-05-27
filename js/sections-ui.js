@@ -16,8 +16,12 @@
 
   function assetUrl(path) {
     if (!path) return '';
-    if (/^https?:\/\//i.test(path)) return path;
-    return window.Workout && window.Workout.assetUrl ? window.Workout.assetUrl(path) : path;
+    var s = String(path).trim();
+    if (window.WorkoutMedia && window.WorkoutMedia.isDriveUrl(s)) {
+      s = window.WorkoutMedia.normalizeImageUrl(s);
+    }
+    if (/^https?:\/\//i.test(s)) return s;
+    return window.Workout && window.Workout.assetUrl ? window.Workout.assetUrl(s) : s;
   }
 
   function hasContent(text) {
@@ -55,12 +59,10 @@
     return 'Нажмите, чтобы открыть и заполнить';
   }
 
-  function groupHasExercises(g) {
-    return g && g.exercises && g.exercises.length > 0;
-  }
-
-  function itemHasExerciseGroups(item) {
-    return (item.groups || []).some(groupHasExercises);
+  function usesMuscleGroups(tpl) {
+    return window.SectionsGroups
+      ? window.SectionsGroups.templateUsesMuscleGroups(tpl)
+      : tpl === 'gpp-level' || tpl === 'sfpp-level' || tpl === 'static-level';
   }
 
   function renderExerciseDetail(ex) {
@@ -107,17 +109,20 @@
       detailEl.innerHTML = '';
       if (listTitle) listTitle.textContent = g.label;
       if (listItems) {
-        listItems.innerHTML = (g.exercises || [])
-          .map(function (ex) {
-            return (
-              '<li><button type="button" class="gpp-exercise-btn" data-ex-id="' +
-              escapeHtml(ex.id) +
-              '">' +
-              escapeHtml(ex.title) +
-              '</button></li>'
-            );
-          })
-          .join('');
+        var exercises = g.exercises || [];
+        listItems.innerHTML = exercises.length
+          ? exercises
+              .map(function (ex) {
+                return (
+                  '<li><button type="button" class="gpp-exercise-btn" data-ex-id="' +
+                  escapeHtml(ex.id) +
+                  '">' +
+                  escapeHtml(ex.title) +
+                  '</button></li>'
+                );
+              })
+              .join('')
+          : '<li class="gpp-exercise-empty">Пока нет упражнений — добавьте в админке.</li>';
       }
       if (listItems) listItems.querySelectorAll('.gpp-exercise-btn').forEach(function (btn) {
         btn.addEventListener('click', function () {
@@ -146,7 +151,6 @@
   function renderGppExerciseLevel(item) {
     var groups = item.groups || [];
     var btns = groups
-      .filter(groupHasExercises)
       .map(function (g) {
         var count = (g.exercises || []).length;
         return (
@@ -293,47 +297,26 @@
         '"></div>';
     }
 
-    if (tpl === 'static-level' || tpl === 'simple-block') {
-      html += block('Описание', '<p>' + textToHtml(item.description) + '</p>');
-      html += block('Подводящие упражнения', '<p>' + textToHtml(item.preparatoryExercises) + '</p>');
-      html += block('Ошибки', '<p>' + textToHtml(item.errors) + '</p>');
-    }
-
     if (tpl === 'dynamic-level') {
       html += renderVideos(item.videos);
       html += block('Описание', '<p>' + textToHtml(item.description) + '</p>');
       html += block('Подводящие упражнения', '<p>' + textToHtml(item.preparatoryExercises) + '</p>');
       html += block('Ошибки', '<p>' + textToHtml(item.errors) + '</p>');
       html += block('Страховка', '<p>' + textToHtml(item.spotting) + '</p>');
-    }
-
-    if (tpl === 'gpp-level' && itemHasExerciseGroups(item)) {
-      html = renderGppExerciseLevel(item);
-    } else if (tpl === 'gpp-level' || tpl === 'sfpp-level') {
-      (item.groups || []).forEach(function (g) {
-        var inner = '';
-        if (g.photo) {
-          inner +=
-            '<div class="item-photo-wrap item-photo-wrap--sm"><img class="item-photo" src="' +
-            assetUrl(g.photo) +
-            '" alt=""></div>';
-        }
-        inner += '<p><strong>Описание:</strong><br>' + textToHtml(g.description) + '</p>';
-        if (tpl === 'gpp-level') {
-          inner += '<p><strong>Цель:</strong><br>' + textToHtml(g.goal) + '</p>';
-          inner += '<p><strong>Принцип действия:</strong><br>' + textToHtml(g.principle) + '</p>';
-          inner += '<p><strong>Ошибки:</strong><br>' + textToHtml(g.errors) + '</p>';
-        } else {
-          inner += '<p><strong>Цель упражнения:</strong><br>' + textToHtml(g.goal) + '</p>';
-        }
-        html +=
-          '<div class="content-block content-block--group">' +
-          '<h3 class="content-block__title">' +
-          escapeHtml(g.label) +
-          '</h3><div class="content-block__body prose">' +
-          inner +
-          '</div></div>';
-      });
+    } else if (usesMuscleGroups(tpl)) {
+      if (window.SectionsGroups) window.SectionsGroups.ensureItemMuscleGroups(item);
+      if (hasContent(item.description)) {
+        html += block('Описание уровня', '<p>' + textToHtml(item.description) + '</p>');
+      }
+      if (hasContent(item.preparatoryExercises)) {
+        html += block('Подводящие упражнения', '<p>' + textToHtml(item.preparatoryExercises) + '</p>');
+      }
+      if (hasContent(item.errors) && tpl === 'static-level') {
+        html += block('Ошибки (общие)', '<p>' + textToHtml(item.errors) + '</p>');
+      }
+      html += renderGppExerciseLevel(item);
+    } else if (tpl === 'simple-block') {
+      html += block('Описание', '<p>' + textToHtml(item.description) + '</p>');
     }
 
     $('#detailContent').innerHTML = html || '<p class="prose">Контент пока не заполнен. Используйте админ-панель.</p>';

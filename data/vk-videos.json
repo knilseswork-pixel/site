@@ -13,10 +13,6 @@
     { "title": "Разминка — видео 1", "embed": "https://vk.com/video_ext.php?oid=-221421435&id=456239031&hash=50b9623f13fa6fe3" },
     { "title": "Разминка — видео 2", "embed": "https://vk.com/video_ext.php?oid=-221421435&id=456239032&hash=9d931ff7df862718" }
   ],
-  "warmup-2": [
-    { "title": "Разминка (доп.) — видео 1", "embed": "https://vk.com/video_ext.php?oid=-221421435&id=456239031&hash=50b9623f13fa6fe3" },
-    { "title": "Разминка (доп.) — видео 2", "embed": "https://vk.com/video_ext.php?oid=-221421435&id=456239032&hash=9d931ff7df862718" }
-  ],
   "recommendations": [
     { "title": "Рекомендации — видео 1", "embed": "https://vk.com/video_ext.php?oid=-221421435&id=456239065&hash=29fed9e765d6af72" },
     { "title": "Рекомендации — видео 2", "embed": "https://vk.com/video_ext.php?oid=-221421435&id=456239067&hash=5161b145044e42b1" },

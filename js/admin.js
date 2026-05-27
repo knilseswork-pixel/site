@@ -22,7 +22,7 @@
   const $ = (sel, root = document) => (root || document).querySelector(sel);
   const $$ = (sel, root = document) => Array.prototype.slice.call(root.querySelectorAll(sel));
 
-  const CATEGORIES = ['Уровни', 'Методика', 'Разминка', 'Соревнования', 'Клиенты'];
+  const CATEGORIES = ['Уровни', 'Методика', 'Разминка', 'Соревнования', 'Клиенты', 'Первая помощь'];
 
 let editingId = null;
 
@@ -177,6 +177,10 @@ function parseVideosFromEditor(text) {
     }
     const iframe = url.match(/src=["']([^"']+)["']/i);
     if (iframe) url = iframe[1];
+    if (window.WorkoutMedia && window.WorkoutMedia.isDriveUrl(url)) {
+      const norm = window.WorkoutMedia.normalizeVideo(url);
+      if (norm.type === 'embed') return { title, embed: norm.url };
+    }
     if (url.includes('vk.com') || url.includes('youtube') || url.includes('youtu.be')) {
       return { title, embed: url };
     }

@@ -49,6 +49,10 @@
       localStorage.removeItem(STORAGE_SECTIONS);
     }
 
+    if (window.SectionsGroups && window.SectionsGroups.migrateSectionsData) {
+      sectionsData = window.SectionsGroups.migrateSectionsData(sectionsData);
+    }
+
     return sectionsData;
   }
 

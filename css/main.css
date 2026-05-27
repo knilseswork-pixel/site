@@ -1755,6 +1755,36 @@ body.detail-open .bottom-bar {
   font-size: 0.9375rem;
 }
 
+.admin-group-block__head,
+.admin-exercise-block__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.admin-field--grow {
+  flex: 1 1 200px;
+}
+
+.admin-exercise-block {
+  margin: 12px 0;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: var(--radius-sm);
+}
+
+.sec-groups-root fieldset.admin-group-block {
+  margin-bottom: 20px;
+}
+
+.gpp-exercise-empty {
+  color: var(--text-muted);
+  padding: 12px 0;
+  list-style: none;
+}
+
 .admin-field {
   display: block;
   margin-bottom: 14px;
