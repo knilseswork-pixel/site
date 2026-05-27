@@ -32,11 +32,20 @@
       if (urls && urls.preview) {
         return (
           '<div class="drive-photo-wrap">' +
+          '<button type="button" class="drive-photo-zoom" data-media-zoom="drive" data-drive-preview="' +
+          escapeHtml(urls.preview) +
+          '" data-drive-open="' +
+          escapeHtml(urls.open) +
+          '" data-media-title="' +
+          escapeHtml(alt || 'Фото') +
+          '">' +
           '<iframe class="drive-photo-frame" src="' +
           escapeHtml(urls.preview) +
           '" title="' +
           escapeHtml(alt || 'Фото') +
-          '" loading="lazy" allow="autoplay" referrerpolicy="no-referrer-when-downgrade"></iframe>' +
+          '" loading="lazy" tabindex="-1" allow="autoplay" referrerpolicy="no-referrer-when-downgrade"></iframe>' +
+          '<span class="drive-photo-zoom__badge">Нажмите, чтобы увеличить</span>' +
+          '</button>' +
           '<a class="drive-photo-open" href="' +
           escapeHtml(urls.open) +
           '" target="_blank" rel="noopener noreferrer">Открыть в Google Drive</a>' +
@@ -63,7 +72,18 @@
         }
       }
     }
-    return '<img ' + attrs + '>';
+    return (
+      '<button type="button" class="photo-zoom-trigger" data-media-zoom="img" data-img-src="' +
+      escapeHtml(src) +
+      '" data-media-title="' +
+      escapeHtml(alt || '') +
+      '">' +
+      '<img ' +
+      attrs +
+      ' tabindex="-1">' +
+      '<span class="drive-photo-zoom__badge">Нажмите, чтобы увеличить</span>' +
+      '</button>'
+    );
   }
 
   function hasContent(text) {

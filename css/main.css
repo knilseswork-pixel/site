@@ -1449,17 +1449,160 @@ body.detail-open .bottom-bar {
 }
 
 .drive-photo-wrap {
-  margin-bottom: 8px;
+  margin-bottom: 12px;
+}
+
+.drive-photo-zoom,
+.drive-video-zoom,
+.photo-zoom-trigger {
+  display: block;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  border: none;
+  background: none;
+  cursor: zoom-in;
+  text-align: left;
+  position: relative;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.drive-photo-zoom:focus-visible,
+.drive-video-zoom:focus-visible,
+.photo-zoom-trigger:focus-visible {
+  outline: 2px solid var(--red);
+  outline-offset: 2px;
 }
 
 .drive-photo-frame {
   display: block;
   width: 100%;
-  min-height: 280px;
-  height: 50vw;
-  max-height: 480px;
+  min-height: 360px;
+  height: 55vw;
+  max-height: 520px;
   border: 0;
   background: #111;
+  pointer-events: none;
+}
+
+.video-frame-wrap--drive {
+  min-height: 320px;
+  aspect-ratio: 16 / 10;
+}
+
+.drive-video-zoom .video-frame-wrap--drive iframe {
+  pointer-events: none;
+}
+
+.drive-photo-zoom__badge {
+  position: absolute;
+  left: 12px;
+  bottom: 12px;
+  z-index: 2;
+  padding: 8px 14px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.72);
+  color: #fff;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  pointer-events: none;
+}
+
+.photo-zoom-trigger .item-photo {
+  pointer-events: none;
+}
+
+.media-lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 12000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  pointer-events: none;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.2s ease, visibility 0.2s ease;
+}
+
+.media-lightbox.is-open {
+  pointer-events: auto;
+  opacity: 1;
+  visibility: visible;
+}
+
+.media-lightbox__backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.88);
+}
+
+.media-lightbox__panel {
+  position: relative;
+  z-index: 1;
+  width: min(96vw, 1100px);
+  max-height: 92vh;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.media-lightbox__close {
+  position: absolute;
+  top: -8px;
+  right: 0;
+  z-index: 3;
+  width: 44px;
+  height: 44px;
+  border: none;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+  font-size: 1.75rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.media-lightbox__body {
+  width: 100%;
+  max-height: calc(92vh - 48px);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  background: #000;
+}
+
+.media-lightbox__iframe {
+  display: block;
+  width: 100%;
+  height: min(80vh, 720px);
+  min-height: 400px;
+  border: 0;
+}
+
+.media-lightbox__img {
+  display: block;
+  width: 100%;
+  max-height: 80vh;
+  object-fit: contain;
+  margin: 0 auto;
+}
+
+.media-lightbox__external {
+  margin-top: 12px;
+  text-align: center;
+  color: var(--red);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.media-lightbox__external:hover {
+  text-decoration: underline;
+}
+
+body.media-lightbox-open {
+  overflow: hidden;
 }
 
 .drive-photo-open {

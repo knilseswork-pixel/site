@@ -102,9 +102,20 @@
     return (
       '<div class="video-block video-block--drive">' +
       '<h3>' + title + '</h3>' +
-      '<div class="video-frame-wrap">' +
-      '<iframe src="' + safeEmbed + '" allow="autoplay; encrypted-media; fullscreen" allowfullscreen loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>' +
+      '<button type="button" class="drive-video-zoom" data-media-zoom="drive-video" data-drive-preview="' +
+      safeEmbed +
+      '" data-drive-open="' +
+      safeOpen +
+      '" data-media-title="' +
+      title +
+      '">' +
+      '<div class="video-frame-wrap video-frame-wrap--drive">' +
+      '<iframe src="' +
+      safeEmbed +
+      '" tabindex="-1" allow="autoplay; encrypted-media; fullscreen" allowfullscreen loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>' +
       '</div>' +
+      '<span class="drive-photo-zoom__badge">Нажмите для просмотра на весь экран</span>' +
+      '</button>' +
       '<a class="vk-open-link" href="' + safeOpen + '" target="_blank" rel="noopener noreferrer">Открыть в Google Drive</a>' +
       '</div>'
     );
