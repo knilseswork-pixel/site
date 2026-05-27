@@ -19,32 +19,27 @@
   ],
   "materialFilters": [
     {
-      "id": "all",
+      "id": "f-0",
       "label": "Все",
       "category": ""
     },
     {
-      "id": "f-levels",
-      "label": "Уровни",
-      "category": "Уровни"
-    },
-    {
-      "id": "f-method",
+      "id": "f-2",
       "label": "Методика",
       "category": "Методика"
     },
     {
-      "id": "f-warmup",
+      "id": "f-3",
       "label": "Разминка",
       "category": "Разминка"
     },
     {
-      "id": "f-comp",
+      "id": "f-4",
       "label": "Соревнования",
       "category": "Соревнования"
     },
     {
-      "id": "f-clients",
+      "id": "f-5",
       "label": "Клиенты",
       "category": "Клиенты"
     }
