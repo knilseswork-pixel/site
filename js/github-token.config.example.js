@@ -1,7 +1,4 @@
 /**
- * Скопируйте как github-token.config.js и вставьте токен ghp_...
- * Загрузите файл на GitHub Pages вместе с остальным сайтом.
+ * Файл github-token.config.js больше не используется.
+ * Токен вводится в админке → вкладка «Публикация» перед каждой отправкой.
  */
-(function () {
-  window.__WORKOUT_GH_TOKEN__ = 'YOUR_TOKEN_HERE';
-})();
