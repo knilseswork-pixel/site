@@ -29,27 +29,31 @@
     if (!raw) return '';
     if (window.WorkoutMedia && window.WorkoutMedia.isDriveUrl(raw)) {
       var urls = window.WorkoutMedia.getDriveImageUrls(raw);
-      if (urls && urls.preview) {
+      if (urls && urls.primary) {
+        var driveChain = [urls.fallback, urls.fallback2].filter(Boolean);
+        var driveFb = driveChain.length ? ' data-drive-fb="' + escapeHtml(driveChain.join('|')) + '"' : '';
+        var driveErr =
+          ' onerror="var p=this.dataset.driveFb;if(!p){this.classList.add(\'item-photo--broken\');return}var a=p.split(\'|\');var n=parseInt(this.dataset.driveFi||\'0\',10);if(n<a.length){this.dataset.driveFi=String(n+1);this.src=a[n]}else{this.classList.add(\'item-photo--broken\')}"';
         return (
           '<div class="drive-photo-wrap">' +
-          '<button type="button" class="drive-photo-zoom" data-media-zoom="drive" data-drive-preview="' +
-          escapeHtml(urls.preview) +
-          '" data-drive-open="' +
-          escapeHtml(urls.open) +
+          '<button type="button" class="photo-zoom-trigger drive-photo-zoom" data-media-zoom="img" data-img-src="' +
+          escapeHtml(urls.primary) +
           '" data-media-title="' +
           escapeHtml(alt || 'Фото') +
           '">' +
-          '<iframe class="drive-photo-frame" src="' +
-          escapeHtml(urls.preview) +
-          '" title="' +
+          '<img class="item-photo item-photo--drive" src="' +
+          escapeHtml(urls.primary) +
+          '" alt="' +
           escapeHtml(alt || 'Фото') +
-          '" loading="lazy" tabindex="-1" allow="autoplay" referrerpolicy="no-referrer-when-downgrade"></iframe>' +
+          '" loading="lazy" tabindex="-1"' +
+          driveFb +
+          driveErr +
+          '>' +
           '<span class="drive-photo-zoom__badge">Нажмите, чтобы увеличить</span>' +
           '</button>' +
           '<a class="drive-photo-open" href="' +
           escapeHtml(urls.open) +
           '" target="_blank" rel="noopener noreferrer">Открыть в Google Drive</a>' +
-          '<p class="drive-photo-hint">Не видно фото? В Drive: Поделиться → «Все, у кого есть ссылка» → Читатель</p>' +
           '</div>'
         );
       }

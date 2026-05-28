@@ -1429,10 +1429,12 @@ body.detail-open .bottom-bar {
 }
 
 .item-photo-wrap {
-  margin-bottom: 24px;
-  border-radius: var(--radius);
-  overflow: hidden;
-  border: 1px solid var(--border);
+  margin: 0 auto 28px;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
 }
 
 .item-photo-wrap--sm {
@@ -1442,27 +1444,41 @@ body.detail-open .bottom-bar {
 
 .item-photo {
   display: block;
-  width: 100%;
+  width: auto;
+  max-width: 100%;
   height: auto;
-  max-height: 420px;
-  object-fit: cover;
+  max-height: min(72vh, 640px);
+  margin: 0 auto;
+  object-fit: contain;
+}
+
+.item-photo--drive {
+  width: 100%;
+  max-height: min(68vh, 580px);
 }
 
 .drive-photo-wrap {
-  margin-bottom: 12px;
+  width: 100%;
+  margin-bottom: 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
 .drive-photo-zoom,
 .drive-video-zoom,
 .photo-zoom-trigger {
-  display: block;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
   width: 100%;
-  margin: 0;
+  margin: 0 auto;
   padding: 0;
   border: none;
   background: none;
   cursor: zoom-in;
-  text-align: left;
+  text-align: center;
   position: relative;
   border-radius: var(--radius-md);
   overflow: hidden;
@@ -1478,12 +1494,15 @@ body.detail-open .bottom-bar {
 .drive-photo-frame {
   display: block;
   width: 100%;
-  min-height: 360px;
-  height: 55vw;
-  max-height: 520px;
+  min-height: 320px;
+  height: min(68vh, 580px);
   border: 0;
   background: #111;
   pointer-events: none;
+}
+
+.drive-photo-frame--fallback.hidden {
+  display: none;
 }
 
 .video-frame-wrap--drive {
@@ -1497,9 +1516,10 @@ body.detail-open .bottom-bar {
 
 .drive-photo-zoom__badge {
   position: absolute;
-  left: 12px;
-  bottom: 12px;
+  left: 50%;
+  bottom: 14px;
   z-index: 2;
+  transform: translateX(-50%);
   padding: 8px 14px;
   border-radius: 999px;
   background: rgba(0, 0, 0, 0.72);
@@ -1507,6 +1527,7 @@ body.detail-open .bottom-bar {
   font-size: 0.8125rem;
   font-weight: 600;
   pointer-events: none;
+  white-space: nowrap;
 }
 
 .photo-zoom-trigger .item-photo {
@@ -1606,23 +1627,17 @@ body.media-lightbox-open {
 }
 
 .drive-photo-open {
-  display: inline-block;
-  margin-top: 10px;
+  display: block;
+  margin-top: 12px;
   font-size: 0.875rem;
   font-weight: 600;
   color: var(--red);
   text-decoration: none;
+  text-align: center;
 }
 
 .drive-photo-open:hover {
   text-decoration: underline;
-}
-
-.drive-photo-hint {
-  margin: 8px 0 0;
-  font-size: 0.8125rem;
-  color: var(--text-muted);
-  line-height: 1.4;
 }
 
 .content-block {
