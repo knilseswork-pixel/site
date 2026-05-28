@@ -38,8 +38,14 @@
     return loadSettings();
   }
 
+  function isPlaceholderToken(token) {
+    var t = String(token || '').trim();
+    return !t || t === 'YOUR_TOKEN_HERE' || t === 'ghp_xxxxxxxxxxxxxxxx';
+  }
+
   function getEmbeddedToken() {
-    return String(window.__WORKOUT_GH_TOKEN__ || '').trim();
+    var t = String(window.__WORKOUT_GH_TOKEN__ || '').trim();
+    return isPlaceholderToken(t) ? '' : t;
   }
 
   function getActiveToken() {
@@ -68,12 +74,32 @@
     return 'https://api.github.com/repos/' + DEFAULT_REPO;
   }
 
+  function authHeaderValue(token) {
+    var t = String(token || '').trim();
+    if (!t) return '';
+    if (/^github_pat_/i.test(t)) return 'Bearer ' + t;
+    return 'token ' + t;
+  }
+
   function authHeaders(token) {
     return {
-      Authorization : 'token ' + token,
+      Authorization : authHeaderValue(token),
       Accept        : 'application/vnd.github+json',
       'Content-Type': 'application/json',
     };
+  }
+
+  function authErrorHint(status) {
+    if (status === 401) {
+      return (
+        'Токен недействителен (401). Создайте новый: github.com/settings/tokens → classic → scope repo. ' +
+        'Вставьте в js/github-token.config.js и залейте файл на сайт.'
+      );
+    }
+    if (status === 403) {
+      return 'Нет прав (403). Нужен scope repo или доступ Contents к репозиторию site.';
+    }
+    return 'HTTP ' + status;
   }
 
   /* Получить SHA файла — нужен для обновления существующего файла */
@@ -82,7 +108,7 @@
       headers: authHeaders(token),
     });
     if (res.status === 404) return null;           /* файла ещё нет — создадим */
-    if (!res.ok) throw new Error('GitHub ' + res.status + ' при чтении ' + filePath);
+    if (!res.ok) throw new Error(authErrorHint(res.status) + ' (' + filePath + ')');
     var json = await res.json();
     return json.sha || null;
   }
@@ -106,8 +132,9 @@
     if (!res.ok) {
       var errText = await res.text();
       var hint = '';
-      if (res.status === 401) hint = ' — токен неверный или просрочен';
-      if (res.status === 403) hint = ' — недостаточно прав (нужен scope: repo)';
+      if (res.status === 401 || res.status === 403) {
+        throw new Error(authErrorHint(res.status) + ' (' + filePath + ')');
+      }
       if (res.status === 409) hint = ' — конфликт SHA, попробуйте ещё раз';
       throw new Error('GitHub ' + res.status + hint + '\n' + filePath);
     }
@@ -125,6 +152,10 @@
       throw new Error(
         'Токен не задан. Вставьте ghp_... в js/github-token.config.js и загрузите файл на хостинг.'
       );
+    }
+    var check = await checkToken();
+    if (!check.ok) {
+      throw new Error(authErrorHint(check.status || 401));
     }
     var ts    = new Date().toLocaleString('ru');
     var msg   = 'site update ' + ts;
@@ -153,7 +184,7 @@
       var res = await fetch('https://api.github.com/user', {
         headers: { Authorization: 'token ' + token, Accept: 'application/vnd.github+json' },
       });
-      if (!res.ok) return { ok: false, reason: 'HTTP ' + res.status };
+      if (!res.ok) return { ok: false, reason: authErrorHint(res.status), status: res.status };
       var user = await res.json();
       return { ok: true, login: user.login };
     } catch (e) {

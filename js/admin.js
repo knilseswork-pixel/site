@@ -444,6 +444,12 @@ function bindGhEvents() {
         return;
       }
 
+      var preCheck = await window.GitHubPush.checkToken();
+      if (!preCheck.ok) {
+        alert('Токен не принят GitHub:\n\n' + (preCheck.reason || 'Ошибка') + '\n\nСоздайте новый токен и обновите github-token.config.js');
+        return;
+      }
+
       var btn = publishGhBtn;
       var origText = btn.textContent;
       btn.disabled = true;
