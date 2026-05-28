@@ -375,14 +375,14 @@ function updatePublishHint() {
   if (window.GitHubPush.hasToken()) {
     if (window.GitHubPush.hasEmbeddedToken()) {
       hint.textContent =
-        '✓ Токен из .env (локально) · репозиторий knilseswork-pixel/site — можно публиковать.';
+        '✓ Токен в коде (github-token.config.js) · knilseswork-pixel/site — можно публиковать.';
     } else {
       hint.textContent = '✓ Токен задан · репозиторий: knilseswork-pixel/site → всё готово.';
     }
     hint.style.color = '#4ade80';
   } else {
     hint.textContent =
-      '⚙ Вставьте токен в js/github-local.config.js (или запустите setup-token.bat)';
+      '⚙ Вставьте токен в js/github-token.config.js и залейте файл на хостинг';
     hint.style.color = '';
   }
 }
@@ -439,7 +439,7 @@ function bindGhEvents() {
 
       if (!window.GitHubPush.hasToken()) {
         alert(
-          'Токен не задан!\n\nОткройте js/github-local.config.js\nВставьте ghp_... между кавычками и сохраните.\nИли запустите setup-token.bat'
+          'Токен не задан!\n\nОткройте js/github-token.config.js\nВставьте ghp_... между кавычками, сохраните и загрузите файл на сайт.'
         );
         return;
       }

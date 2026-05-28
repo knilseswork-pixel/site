@@ -123,7 +123,7 @@
     var token = getActiveToken();
     if (!token) {
       throw new Error(
-        'Токен не задан. Создайте .env с GITHUB_TOKEN и выполните: node scripts/sync-github-env.js'
+        'Токен не задан. Вставьте ghp_... в js/github-token.config.js и загрузите файл на хостинг.'
       );
     }
     var ts    = new Date().toLocaleString('ru');

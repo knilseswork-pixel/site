@@ -189,7 +189,7 @@
 
         <div class="admin-tab-panel hidden" data-tab="publish">
           <div class="admin-help" id="publishGhHint">
-            <p id="publishGhStatus">⚙ Укажите токен в .env и выполните node scripts/sync-github-env.js</p>
+            <p id="publishGhStatus">⚙ Токен задаётся в js/github-token.config.js</p>
           </div>
           <button type="button" class="admin-btn admin-btn--primary" id="adminPublishGitHub" style="font-size:1rem;padding:14px 20px">
             🚀 Опубликовать в GitHub (все файлы)
@@ -219,13 +219,11 @@
           <h3>GitHub — публикация</h3>
           <p class="admin-help">
             Репозиторий: <code>knilseswork-pixel/site</code>, ветка <code>main</code>.<br>
-            <strong>Один раз на этом компьютере:</strong> откройте файл
-            <code>js/github-local.config.js</code>, вставьте токен <code>ghp_...</code> между кавычками, сохраните.<br>
-            Или запустите <code>setup-token.bat</code> в папке сайта.<br>
-            Файл с токеном в <code>.gitignore</code> — при обычном push в GitHub не попадёт.
+            Токен один раз в коде: <code>js/github-token.config.js</code> — после этого все админы публикуют без ввода токена.<br>
+            Залейте этот файл на хостинг вместе с сайтом. Токен виден в исходниках — используйте отдельный токен только для этого репозитория.
           </p>
           <div id="ghTokenBlock" class="hidden">
-            <p class="admin-help">Резерв: ввод токена в браузер</p>
+            <p class="admin-help">Резерв: свой токен в этом браузере</p>
             <label>GitHub Token (ghp_…)
               <input type="password" id="ghToken" autocomplete="off" placeholder="ghp_xxxxxxxxxxxxxxxx" style="font-family:monospace">
             </label>
@@ -250,10 +248,11 @@
 
   <script>
     (function () {
-      var BUILD = '20260528k';
+      var BUILD = '20260528m';
       var scripts = [
         'js/media-url.js',
         'js/media-lightbox.js',
+        'js/github-token.config.js',
         '_optional:js/github-local.config.js',
         '_optional:js/github-secrets.local.js',
         'js/github-push.js',
