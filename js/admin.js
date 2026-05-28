@@ -358,14 +358,9 @@ function shouldOpenAdminFromUrl() {
 
 function loadGhSettings() {
   if (!window.GitHubPush) return;
-  var embedded = window.GitHubPush.hasEmbeddedToken();
-  var tokenBlock = $('#ghTokenBlock');
-  if (tokenBlock) tokenBlock.classList.toggle('hidden', embedded);
-  if (!embedded) {
-    var s = window.GitHubPush.loadSettings();
-    var tokenEl = $('#ghToken');
-    if (s.token && tokenEl) tokenEl.value = s.token;
-  }
+  var s = window.GitHubPush.loadSettings();
+  var tokenEl = $('#ghToken');
+  if (s.token && tokenEl) tokenEl.value = s.token;
   updatePublishHint();
   verifyGhTokenHint();
 }
@@ -392,6 +387,20 @@ async function verifyGhTokenHint() {
       if (status) {
         status.textContent = '✗ ' + (result.reason || 'Токен не принят');
         status.style.color = '#f87171';
+      }
+      var tokenBlock = $('#ghTokenBlock');
+      if (tokenBlock) {
+        tokenBlock.classList.remove('hidden');
+        var note = tokenBlock.querySelector('.gh-token-fallback-note');
+        if (!note) {
+          note = document.createElement('p');
+          note.className = 'admin-help gh-token-fallback-note';
+          note.style.color = '#fbbf24';
+          tokenBlock.insertBefore(note, tokenBlock.firstChild);
+        }
+        note.textContent =
+          'Токен в github-token.config.js не работает (GitHub мог отозвать его — он виден на сайте). ' +
+          'Создайте новый и вставьте ниже → «Сохранить токен», либо обновите файл на GitHub.';
       }
     }
   } catch (e) {
