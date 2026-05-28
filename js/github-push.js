@@ -3,6 +3,7 @@
  * Токен передаётся из админки при каждой публикации (не хранится в коде сайта).
  */
 (function () {
+  var STORAGE_GH = 'workout_github_token';
   var DEFAULT_REPO   = 'knilseswork-pixel/site';
   var DEFAULT_BRANCH = 'main';
 
@@ -136,20 +137,43 @@
     if (onProgress) onProgress('✅ Готово! GitHub Pages обновится через ~1 минуту.');
   }
 
-  /** Удалить старые сохранённые токены из localStorage */
+  function saveStoredToken(token) {
+    var t = normalizeToken(token);
+    try {
+      if (t) localStorage.setItem(STORAGE_GH, t);
+      else localStorage.removeItem(STORAGE_GH);
+    } catch (e) { /* ignore */ }
+  }
+
+  function loadStoredToken() {
+    try {
+      return normalizeToken(localStorage.getItem(STORAGE_GH) || '');
+    } catch (e) {
+      return '';
+    }
+  }
+
   function clearStoredToken() {
     try {
+      localStorage.removeItem(STORAGE_GH);
       localStorage.removeItem('workout_github_settings');
     } catch (e) { /* ignore */ }
     if (window.__WORKOUT_GH_TOKEN__) window.__WORKOUT_GH_TOKEN__ = '';
   }
 
+  function hasStoredToken() {
+    return !!loadStoredToken();
+  }
+
   window.GitHubPush = {
-    DEFAULT_REPO   : DEFAULT_REPO,
-    DEFAULT_BRANCH : DEFAULT_BRANCH,
-    normalizeToken : normalizeToken,
-    checkToken       : checkToken,
-    publishAll       : publishAll,
-    clearStoredToken : clearStoredToken,
+    DEFAULT_REPO     : DEFAULT_REPO,
+    DEFAULT_BRANCH   : DEFAULT_BRANCH,
+    normalizeToken   : normalizeToken,
+    checkToken         : checkToken,
+    publishAll         : publishAll,
+    saveStoredToken    : saveStoredToken,
+    loadStoredToken    : loadStoredToken,
+    clearStoredToken   : clearStoredToken,
+    hasStoredToken     : hasStoredToken,
   };
 })();

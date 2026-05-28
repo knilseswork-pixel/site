@@ -189,18 +189,20 @@
 
         <div class="admin-tab-panel hidden" data-tab="publish">
           <h3>GitHub</h3>
-          <p class="admin-help">Репозиторий <code>knilseswork-pixel/site</code>, ветка <code>main</code>. Токен вводится каждый раз и нигде не сохраняется на сайте.</p>
+          <p class="admin-help">Репозиторий <code>knilseswork-pixel/site</code>, ветка <code>main</code>. Токен хранится только в этом браузере (не в коде на GitHub).</p>
           <label>GitHub Token (ghp_…)
             <input type="password" id="ghToken" autocomplete="off" placeholder="ghp_xxxxxxxxxxxxxxxx" style="font-family:monospace;width:100%">
           </label>
           <div style="display:flex;gap:8px;flex-wrap:wrap;margin:8px 0 12px">
+            <button type="button" class="admin-btn admin-btn--primary" id="ghSaveBtn">Сохранить токен</button>
             <button type="button" class="admin-btn" id="ghCheckBtn">Проверить токен</button>
+            <button type="button" class="admin-btn admin-btn--danger" id="ghClearBtn">Удалить сохранённый</button>
           </div>
-          <p class="admin-help" id="publishGhStatus">Введите токен и нажмите «Проверить» или сразу «Опубликовать».</p>
+          <p class="admin-help" id="publishGhStatus">Введите токен, при необходимости нажмите «Сохранить».</p>
           <button type="button" class="admin-btn admin-btn--primary" id="adminPublishGitHub" style="font-size:1rem;padding:14px 20px">
             🚀 Опубликовать в GitHub (все файлы)
           </button>
-          <p class="admin-help">После публикации поле токена очищается. Сайт обновится у всех через 1–2 минуты.</p>
+          <p class="admin-help">Сайт обновится у всех через 1–2 минуты.</p>
           <hr class="admin-hr">
           <p class="admin-help">Или скачайте файлы вручную и загрузите сами:</p>
           <button type="button" class="admin-btn" id="adminDownloadConfig">Скачать site-config.json</button>
@@ -238,7 +240,7 @@
 
   <script>
     (function () {
-      var BUILD = '20260528q';
+      var BUILD = '20260528r';
       var scripts = [
         'js/media-url.js',
         'js/media-lightbox.js',

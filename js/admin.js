@@ -361,16 +361,27 @@ function getGhTokenFromInput() {
   return el ? String(el.value || '').trim() : '';
 }
 
-function clearGhTokenInput() {
+function getGhTokenForUse() {
+  var fromInput = getGhTokenFromInput();
+  if (fromInput) return fromInput;
+  if (window.GitHubPush) return window.GitHubPush.loadStoredToken();
+  return '';
+}
+
+function setGhTokenInput(value) {
   var el = $('#ghToken');
-  if (el) el.value = '';
+  if (el) el.value = value || '';
 }
 
 function loadGhSettings() {
   if (!window.GitHubPush) return;
-  window.GitHubPush.clearStoredToken();
-  clearGhTokenInput();
-  updatePublishHint();
+  var saved = window.GitHubPush.loadStoredToken();
+  if (saved) {
+    setGhTokenInput(saved);
+    updatePublishHint('✓ Токен сохранён в этом браузере', true);
+  } else {
+    updatePublishHint();
+  }
 }
 
 function updatePublishHint(text, ok) {
@@ -386,11 +397,44 @@ function updatePublishHint(text, ok) {
 }
 
 function bindGhEvents() {
+  var ghSaveBtn = $('#ghSaveBtn');
+  if (ghSaveBtn) {
+    ghSaveBtn.addEventListener('click', async function () {
+      if (!window.GitHubPush) return;
+      var token = getGhTokenFromInput();
+      if (!token) {
+        showToast('Вставьте токен ghp_…');
+        updatePublishHint('Введите токен перед сохранением', false);
+        return;
+      }
+      var check = await window.GitHubPush.checkToken(token);
+      if (!check.ok) {
+        updatePublishHint('✗ ' + (check.reason || 'Токен не принят'), false);
+        showToast('Токен не принят GitHub');
+        return;
+      }
+      window.GitHubPush.saveStoredToken(token);
+      updatePublishHint('✓ Токен сохранён (' + check.login + ') в этом браузере', true);
+      showToast('Токен сохранён');
+    });
+  }
+
+  var ghClearBtn = $('#ghClearBtn');
+  if (ghClearBtn) {
+    ghClearBtn.addEventListener('click', function () {
+      if (!window.GitHubPush) return;
+      window.GitHubPush.clearStoredToken();
+      setGhTokenInput('');
+      updatePublishHint('Сохранённый токен удалён');
+      showToast('Токен удалён');
+    });
+  }
+
   var ghCheckBtn = $('#ghCheckBtn');
   if (ghCheckBtn) {
     ghCheckBtn.addEventListener('click', async function () {
       if (!window.GitHubPush) return;
-      var token = getGhTokenFromInput();
+      var token = getGhTokenForUse();
       if (!token) {
         showToast('Вставьте токен ghp_…');
         updatePublishHint('Введите токен GitHub', false);
@@ -423,9 +467,9 @@ function bindGhEvents() {
         return;
       }
 
-      var token = getGhTokenFromInput();
+      var token = getGhTokenForUse();
       if (!token) {
-        alert('Введите токен GitHub (ghp_…) в поле выше.');
+        alert('Введите токен GitHub (ghp_…) или нажмите «Сохранить токен» после ввода.');
         return;
       }
 
@@ -458,8 +502,12 @@ function bindGhEvents() {
 
         if (window.SiteConfigStore) window.SiteConfigStore.clearAllDrafts();
 
-        clearGhTokenInput();
-        updatePublishHint('✅ Опубликовано. Токен очищен — введите снова при следующей публикации.', true);
+        if (window.GitHubPush.hasStoredToken()) {
+          setGhTokenInput(window.GitHubPush.loadStoredToken());
+          updatePublishHint('✅ Опубликовано. Сохранённый токен на месте.', true);
+        } else {
+          updatePublishHint('✅ Опубликовано.', true);
+        }
       } catch (e) {
         showToast('Ошибка: ' + e.message);
         alert('Ошибка публикации:\n' + e.message);
