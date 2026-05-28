@@ -6,5 +6,5 @@
  * только для репозитория site, scope: repo. При утечке — удалите токен на GitHub и создайте новый.
  */
 (function () {
-  window.__WORKOUT_GH_TOKEN__ = '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';
+  window.__WORKOUT_GH_TOKEN__ = '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';
 })();

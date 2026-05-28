@@ -219,11 +219,11 @@
           <h3>GitHub — публикация</h3>
           <p class="admin-help">
             Репозиторий: <code>knilseswork-pixel/site</code>, ветка <code>main</code>.<br>
-            Токен один раз в коде: <code>js/github-token.config.js</code> — после этого все админы публикуют без ввода токена.<br>
-            Залейте этот файл на хостинг вместе с сайтом. Токен виден в исходниках — используйте отдельный токен только для этого репозитория.
+            Токен в <code>js/github-token.config.js</code> — для всех админов.<br>
+            <strong>Важно:</strong> на публичном сайте GitHub может <em>отозвать</em> токен. Тогда создайте новый и обновите файл, или сохраните новый токен в поле ниже (только в этом браузере).
           </p>
-          <div id="ghTokenBlock" class="hidden">
-            <p class="admin-help">Резерв: свой токен в этом браузере</p>
+          <div id="ghTokenBlock">
+            <p class="admin-help">Токен для публикации (если в коде не работает — сохраните здесь)</p>
             <label>GitHub Token (ghp_…)
               <input type="password" id="ghToken" autocomplete="off" placeholder="ghp_xxxxxxxxxxxxxxxx" style="font-family:monospace">
             </label>
@@ -248,7 +248,7 @@
 
   <script>
     (function () {
-      var BUILD = '20260528o';
+      var BUILD = '20260528p';
       var scripts = [
         'js/media-url.js',
         'js/media-lightbox.js',

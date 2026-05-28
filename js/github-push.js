@@ -49,10 +49,10 @@
   }
 
   function getActiveToken() {
-    var embedded = getEmbeddedToken();
-    if (embedded) return embedded;
-    var s = loadSettings();
-    return (s.token || '').trim();
+    /* Сохранённый в браузере токен — приоритет (если в коде просрочен/отозван GitHub) */
+    var stored = String(loadSettings().token || '').trim();
+    if (stored && !isPlaceholderToken(stored)) return stored;
+    return getEmbeddedToken();
   }
 
   function hasEmbeddedToken() {
@@ -92,8 +92,9 @@
   function authErrorHint(status) {
     if (status === 401) {
       return (
-        'Токен недействителен (401). Создайте новый: github.com/settings/tokens → classic → scope repo. ' +
-        'Вставьте в js/github-token.config.js и залейте файл на сайт.'
+        'Токен недействителен или отозван GitHub (401). Создайте новый classic с scope repo. ' +
+        'Вставьте в js/github-token.config.js или сохраните в админке ниже. ' +
+        'Токен на публичном сайте GitHub часто блокирует автоматически.'
       );
     }
     if (status === 403) {
