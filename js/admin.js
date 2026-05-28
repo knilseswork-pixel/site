@@ -367,6 +367,37 @@ function loadGhSettings() {
     if (s.token && tokenEl) tokenEl.value = s.token;
   }
   updatePublishHint();
+  verifyGhTokenHint();
+}
+
+async function verifyGhTokenHint() {
+  var hint = $('#publishGhStatus');
+  var status = $('#ghStatus');
+  if (!hint || !window.GitHubPush || !window.GitHubPush.hasToken()) return;
+  hint.textContent = 'Проверяю токен GitHub…';
+  hint.style.color = '';
+  try {
+    var result = await window.GitHubPush.checkToken();
+    if (result.ok) {
+      hint.textContent =
+        '✓ Токен работает (' + result.login + ') · knilseswork-pixel/site';
+      hint.style.color = '#4ade80';
+      if (status) {
+        status.textContent = '✓ GitHub: ' + result.login;
+        status.style.color = '#4ade80';
+      }
+    } else {
+      hint.textContent = '✗ ' + (result.reason || 'Токен не принят');
+      hint.style.color = '#f87171';
+      if (status) {
+        status.textContent = '✗ ' + (result.reason || 'Токен не принят');
+        status.style.color = '#f87171';
+      }
+    }
+  } catch (e) {
+    hint.textContent = '✗ Ошибка проверки: ' + e.message;
+    hint.style.color = '#f87171';
+  }
 }
 
 function updatePublishHint() {
