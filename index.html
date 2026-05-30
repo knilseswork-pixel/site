@@ -156,10 +156,14 @@
                 <option>Первая помощь</option>
               </select>
             </label>
-            <label id="editorBodyWrap">Текст статьи <span class="label-hint">абзацы через пустую строку</span>
-              <textarea id="editorBody" rows="6"></textarea>
+            <label id="editorBodyWrap">Текст статьи <span class="label-hint">если нет подразделов — один текст; иначе кратко в описании на карточке</span>
+              <textarea id="editorBody" rows="4"></textarea>
             </label>
-            <div id="editorHubItems" class="editor-hub-items hidden"></div>
+            <section class="editor-subsections">
+              <h4 class="admin-subsection__title">Подразделы (кнопки на сайте)</h4>
+              <p class="admin-help">Можно добавить к любому материалу. Есть подразделы — на сайте откроется список кнопок, как у «Первая помощь».</p>
+              <div id="editorHubItems" class="editor-hub-items"></div>
+            </section>
             <label>Видео <span class="label-hint">строка: Название | ссылка VK, YouTube или Google Drive</span>
               <textarea id="editorVideos" rows="4" placeholder="Упражнение | https://drive.google.com/file/d/.../view?usp=sharing"></textarea>
             </label>
@@ -240,10 +244,11 @@
 
   <script>
     (function () {
-      var BUILD = '20260528s';
+      var BUILD = '20260528v';
       var scripts = [
         'js/media-url.js',
         'js/media-lightbox.js',
+        'js/hub-items-editor.js',
         '_optional:js/github-local.config.js',
         '_optional:js/github-secrets.local.js',
         'js/github-push.js',

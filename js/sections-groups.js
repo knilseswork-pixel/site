@@ -45,7 +45,7 @@
   function ensureDynamicElements(item) {
     if (Array.isArray(item.elements) && item.elements.length) {
       item.elements = item.elements.map(function (ex) {
-        return {
+        var el = {
           id: ex.id || uniqueId('el'),
           title: ex.title || 'Элемент',
           description: ex.description || '',
@@ -55,6 +55,8 @@
           spotting: ex.spotting || '',
           videos: Array.isArray(ex.videos) ? ex.videos : [],
         };
+        ensureSubSections(el);
+        return el;
       });
     } else if (item.groups && item.groups.length) {
       item.elements = flattenGroupsToElements(item);
@@ -105,7 +107,14 @@
       item.groups = defaultMuscleGroups();
       return item;
     }
-    item.groups = item.groups.map(migrateGroup);
+    item.groups = item.groups.map(function (g) {
+      var group = migrateGroup(g);
+      group.exercises = (group.exercises || []).map(function (ex) {
+        ensureSubSections(ex);
+        return ex;
+      });
+      return group;
+    });
     return item;
   }
 
@@ -136,13 +145,26 @@
       }
     }
     item.contentBlocks = item.contentBlocks.map(function (b) {
-      return {
+      var block = {
         id: b.id || uniqueId('cb'),
         title: b.title || 'Блок',
         body: b.body != null ? String(b.body) : '',
       };
+      ensureSubSections(b);
+      if (b.subSections && b.subSections.length) block.subSections = b.subSections;
+      return block;
     });
     return item;
+  }
+
+  function ensureSubSections(obj) {
+    if (!obj) return obj;
+    if (window.WorkoutHubItemsEditor) {
+      window.WorkoutHubItemsEditor.ensureOn(obj, uniqueId);
+      return obj;
+    }
+    if (!Array.isArray(obj.subSections)) obj.subSections = [];
+    return obj;
   }
 
   function migrateSectionsData(data) {
@@ -158,6 +180,7 @@
           ensureItemMuscleGroups(item);
         }
         ensureContentBlocks(item);
+        ensureSubSections(item);
       });
     });
     return data;
@@ -171,6 +194,7 @@
     ensureDynamicElements: ensureDynamicElements,
     ensureItemMuscleGroups: ensureItemMuscleGroups,
     ensureContentBlocks: ensureContentBlocks,
+    ensureSubSections: ensureSubSections,
     migrateSectionsData: migrateSectionsData,
     slugId: slugId,
     uniqueId: uniqueId,

@@ -1787,8 +1787,14 @@ body.media-lightbox-open {
   color: var(--text-muted);
 }
 
-.editor-hub-items {
-  margin-top: 12px;
+.editor-hub-items,
+.editor-subsections {
+  margin-top: 16px;
+}
+
+.editor-subsections .admin-subsection__title {
+  margin: 0 0 8px;
+  font-size: 1rem;
 }
 
 .admin-hub-item {

@@ -221,8 +221,14 @@
     return '<p>' + html + '</p>';
   }
 
+  function hubList(article) {
+    if (!article) return [];
+    if (window.WorkoutHubItemsEditor) return window.WorkoutHubItemsEditor.getList(article);
+    return article.items || article.subSections || [];
+  }
+
   function isHubArticle(article) {
-    return article && article.type === 'hub' && article.items && article.items.length;
+    return article && (article.type === 'hub' || hubList(article).length > 0);
   }
 
   function hubItemMatchesSearch(item, q) {
@@ -242,7 +248,7 @@
       return true;
     }
     if (isHubArticle(article)) {
-      return article.items.some(function (item) {
+      return hubList(article).some(function (item) {
         return hubItemMatchesSearch(item, q);
       });
     }
@@ -250,7 +256,8 @@
   }
 
   function renderHubLevel(article) {
-    var btns = (article.items || [])
+    var items = hubList(article);
+    var btns = items
       .map(function (item) {
         return (
           '<button type="button" class="gpp-group-btn hub-topic-btn" data-hub-item-id="' +
@@ -262,9 +269,18 @@
         );
       })
       .join('');
+    var intro = '';
+    if (article.excerpt) {
+      intro = '<p class="sections-intro hub-level-intro">' + escapeHtml(article.excerpt) + '</p>';
+    }
+    var emptyHint = items.length
+      ? ''
+      : '<p class="gpp-level-ui__hint">Подразделы пока не добавлены. Заполните в админ-панели.</p>';
     return (
       '<div class="gpp-level-ui hub-materials-ui">' +
+      intro +
       '<p class="gpp-level-ui__hint">Выберите раздел:</p>' +
+      emptyHint +
       '<div class="gpp-groups hub-topics">' +
       btns +
       '</div>' +
@@ -302,7 +318,7 @@
 
     topicsEl.querySelectorAll('.hub-topic-btn').forEach(function (btn) {
       btn.addEventListener('click', function () {
-        var item = (article.items || []).find(function (it) {
+        var item = hubList(article).find(function (it) {
           return it.id === btn.dataset.hubItemId;
         });
         if (!item) return;
@@ -613,6 +629,9 @@
     renderCards: renderCards,
     renderStats: renderStats,
     populateCategorySelect: populateCategorySelect,
+    isHubArticle: isHubArticle,
+    renderHubLevel: renderHubLevel,
+    bindHubNav: bindHubNav,
   };
 
   function fixStaticAssets() {

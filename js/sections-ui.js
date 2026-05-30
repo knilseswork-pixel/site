@@ -94,6 +94,29 @@
     return String(text || '').trim().length > 0;
   }
 
+  function getSubList(obj) {
+    if (!obj) return [];
+    if (window.WorkoutHubItemsEditor) return window.WorkoutHubItemsEditor.getList(obj);
+    return obj.subSections || obj.items || [];
+  }
+
+  function hasSubSections(obj) {
+    return getSubList(obj).length > 0;
+  }
+
+  function renderSubSectionsUi(obj, excerpt) {
+    var WM = window.WorkoutMain;
+    if (!hasSubSections(obj) || !WM || !WM.renderHubLevel) return '';
+    return WM.renderHubLevel({ items: getSubList(obj), excerpt: excerpt || '' });
+  }
+
+  function bindSubSectionsUi(container, obj) {
+    var WM = window.WorkoutMain;
+    if (!container || !hasSubSections(obj) || !WM || !WM.bindHubNav) return;
+    var hub = container.querySelector('.hub-materials-ui');
+    if (hub) WM.bindHubNav(hub, { items: getSubList(obj) });
+  }
+
   function sortItems(items) {
     if (window.WorkoutLevelSort) return window.WorkoutLevelSort.sortByLevel(items);
     return items || [];
@@ -134,14 +157,22 @@
   }
 
   function renderExerciseDetail(ex, tpl) {
+    var backLabel = tpl === 'dynamic-level' ? 'К списку элементов' : 'К списку упражнений';
     var html =
       '<div class="gpp-exercise-detail">' +
       '<button type="button" class="gpp-back" data-gpp-back="list">← ' +
-      (tpl === 'dynamic-level' ? 'К списку элементов' : 'К списку упражнений') +
+      backLabel +
       '</button>' +
       '<h3 class="gpp-exercise-detail__title">' +
       escapeHtml(ex.title) +
       '</h3>';
+
+    if (hasSubSections(ex)) {
+      html += renderSubSectionsUi(ex, ex.description || '');
+      html += '</div>';
+      return html;
+    }
+
     if (tpl === 'dynamic-level' && ex.videos && ex.videos.length) {
       html += renderVideos(ex.videos);
     }
@@ -214,6 +245,7 @@
           listEl.classList.add('hidden');
           detailEl.classList.remove('hidden');
           detailEl.innerHTML = renderExerciseDetail(ex, tpl);
+          bindSubSectionsUi(detailEl, ex);
           detailEl.querySelector('[data-gpp-back="list"]').addEventListener('click', function () {
             showList(g.id);
           });
@@ -269,6 +301,7 @@
           listEl.classList.add('hidden');
           detailEl.classList.remove('hidden');
           detailEl.innerHTML = renderExerciseDetail(ex, 'dynamic-level');
+          bindSubSectionsUi(detailEl, ex);
           detailEl.querySelector('[data-gpp-back="list"]').addEventListener('click', showList);
           detailEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
         });
@@ -421,12 +454,33 @@
     window.SectionsGroups.ensureContentBlocks(item);
     return (item.contentBlocks || [])
       .filter(function (b) {
-        return hasContent(b.body) || hasContent(b.title);
+        return hasSubSections(b) || hasContent(b.body) || hasContent(b.title);
       })
       .map(function (b) {
+        if (hasSubSections(b)) {
+          return (
+            '<div class="content-block content-block--hub" data-cb-hub="' +
+            escapeHtml(b.id) +
+            '">' +
+            (hasContent(b.title)
+              ? '<h3 class="content-block__title">' + escapeHtml(b.title) + '</h3>'
+              : '') +
+            renderSubSectionsUi(b, b.body || '') +
+            '</div>'
+          );
+        }
         return block(b.title || 'Блок', '<p>' + textToHtml(b.body || '') + '</p>');
       })
       .join('');
+  }
+
+  function bindContentBlocksHub(root, item) {
+    if (!root || !item) return;
+    (item.contentBlocks || []).forEach(function (b) {
+      if (!hasSubSections(b)) return;
+      var el = root.querySelector('[data-cb-hub="' + b.id + '"]');
+      if (el) bindSubSectionsUi(el, b);
+    });
   }
 
   function openSectionItem(sectionId, itemId) {
@@ -447,9 +501,21 @@
       html += '<div class="item-photo-wrap">' + renderPhotoImg(item.photo, item.title) + '</div>';
     }
 
+    if (window.SectionsGroups) window.SectionsGroups.ensureSubSections(item);
+    var subList = getSubList(item);
+    var hasSubNav = subList.length > 0;
+    var WM = window.WorkoutMain;
+
+    if (hasSubNav && WM && WM.renderHubLevel) {
+      html += WM.renderHubLevel({
+        items: subList,
+        excerpt: hasContent(item.description) ? item.description : '',
+      });
+    }
+
     if (tpl === 'dynamic-level') {
       if (window.SectionsGroups) window.SectionsGroups.ensureDynamicElements(item);
-      if (hasContent(item.description)) {
+      if (!hasSubNav && hasContent(item.description)) {
         html += block('Описание уровня', '<p>' + textToHtml(item.description) + '</p>');
       }
       html += renderContentBlocks(item);
@@ -459,19 +525,24 @@
       html += renderDynamicElementsLevel(item);
     } else if (usesMuscleGroups(tpl)) {
       if (window.SectionsGroups) window.SectionsGroups.ensureItemMuscleGroups(item);
-      if (hasContent(item.description)) {
+      if (!hasSubNav && hasContent(item.description)) {
         html += block('Описание уровня', '<p>' + textToHtml(item.description) + '</p>');
       }
       html += renderContentBlocks(item);
       html += renderGppExerciseLevel(item, tpl);
     } else if (tpl === 'simple-block') {
-      if (hasContent(item.description)) {
+      if (!hasSubNav && hasContent(item.description)) {
         html += block('Описание', '<p>' + textToHtml(item.description) + '</p>');
       }
       html += renderContentBlocks(item);
     }
 
     $('#detailContent').innerHTML = html || '<p class="prose">Контент пока не заполнен. Используйте админ-панель.</p>';
+    if (hasSubNav && WM && WM.bindHubNav) {
+      var secHubRoot = $('#detailContent .hub-materials-ui');
+      if (secHubRoot) WM.bindHubNav(secHubRoot, { items: subList });
+    }
+    bindContentBlocksHub($('#detailContent'), item);
     var dynamicRoot = $('#detailContent .dynamic-level-ui');
     if (dynamicRoot) bindDynamicElementsNav(dynamicRoot, item);
     var gppRoot = $('#detailContent .gpp-level-ui:not(.dynamic-level-ui)');

@@ -6,6 +6,8 @@
   var editingSectionId = null;
   var editingItemId = null;
   var editingSectionTemplate = null;
+  var sectionHubEditor = null;
+  var nestedSubsStore = {};
 
   function $(sel, root) {
     return (root || document).querySelector(sel);
@@ -115,6 +117,33 @@
     if (ed) ed.classList.add('hidden');
   }
 
+  function registerNestedSubs(mountId, list) {
+    nestedSubsStore[mountId] = list || [];
+  }
+
+  function syncNestedSubsFromDom() {
+    var H = window.WorkoutHubItemsEditor;
+    if (!H) return;
+    document.querySelectorAll('[data-hub-mount]').forEach(function (el) {
+      if (!el.dataset.hubBound) return;
+      var id = el.getAttribute('data-hub-mount');
+      if (id) nestedSubsStore[id] = H.collectFromRoot(el);
+    });
+  }
+
+  function mountNestedSubsInScope(scopeEl) {
+    var H = window.WorkoutHubItemsEditor;
+    if (H && scopeEl) H.mountAll(scopeEl, nestedSubsStore);
+  }
+
+  function nestedSubsForEntity(entity, prefix) {
+    var H = window.WorkoutHubItemsEditor;
+    var mountId = prefix + '-' + (entity.id || 'x');
+    var list = H ? H.getList(entity) : entity.subSections || [];
+    registerNestedSubs(mountId, list);
+    return H ? H.nestedMountHtml(mountId) : '';
+  }
+
   function renderContentBlockEditor(block) {
     return (
       '<div class="admin-content-block" data-cb-id="' +
@@ -126,9 +155,11 @@
       '"></label>' +
       '<button type="button" class="admin-btn admin-btn--sm admin-btn--danger" data-action="del-content-block">Удалить</button>' +
       '</div>' +
-      '<label class="admin-field">Текст<textarea data-f="body" rows="4">' +
+      '<label class="admin-field">Текст <span class="label-hint">если нет подразделов ниже</span>' +
+      '<textarea data-f="body" rows="3">' +
       escapeHtml(block.body || '') +
       '</textarea></label>' +
+      nestedSubsForEntity(block, 'cb') +
       '</div>'
     );
   }
@@ -146,18 +177,26 @@
         var f = el.querySelector('[data-f="' + name + '"]');
         return f ? f.value.trim() : '';
       }
+      var cbId = el.getAttribute('data-cb-id') || (SG ? SG.uniqueId('cb') : 'cb-' + Date.now());
+      var mount = el.querySelector('[data-hub-mount="cb-' + cbId + '"]');
+      var subSections = mount && window.WorkoutHubItemsEditor ? window.WorkoutHubItemsEditor.collectFromRoot(mount) : [];
       list.push({
-        id: el.getAttribute('data-cb-id') || (SG ? SG.uniqueId('cb') : 'cb-' + Date.now()),
+        id: cbId,
         title: val('title') || 'Блок',
         body: val('body'),
+        subSections: subSections,
       });
     });
     return list;
   }
 
   function refreshContentBlocksEditor(blocks) {
+    syncNestedSubsFromDom();
     var root = $('#secContentBlocksRoot');
-    if (root) root.innerHTML = renderContentBlocksEditor(blocks);
+    if (root) {
+      root.innerHTML = renderContentBlocksEditor(blocks);
+      mountNestedSubsInScope(root);
+    }
   }
 
   function bindContentBlocksEditorEvents(force) {
@@ -175,6 +214,25 @@
       });
       refreshContentBlocksEditor(blocks);
     });
+  }
+
+  function subSectionsEditorSection() {
+    return (
+      '<section class="admin-subsection">' +
+      '<h4 class="admin-subsection__title">Подразделы (кнопки на странице)</h4>' +
+      '<p class="admin-help">Кнопки на странице уровня. Подразделы также можно добавить к упражнению, элементу и текстовому блоку ниже.</p>' +
+      '<div id="secHubItemsRoot" class="editor-hub-items"></div>' +
+      '</section>'
+    );
+  }
+
+  function mountSectionHubEditor(item) {
+    if (!window.WorkoutHubItemsEditor) return null;
+    var root = $('#secHubItemsRoot');
+    if (root) root.dataset.hubBound = '';
+    if (window.SectionsGroups) window.SectionsGroups.ensureSubSections(item);
+    sectionHubEditor = window.WorkoutHubItemsEditor.mount(root, item.subSections || []);
+    return sectionHubEditor;
   }
 
   function contentBlocksEditorSection(blocks) {
@@ -246,6 +304,7 @@
       '<textarea data-f="videos" rows="2">' +
       escapeHtml(formatVideosForEditor(ex.videos || [])) +
       '</textarea></label>' +
+      nestedSubsForEntity(ex, 'el') +
       '</div>'
     );
   }
@@ -264,8 +323,10 @@
         return el ? el.value.trim() : '';
       }
       var videosEl = block.querySelector('[data-f="videos"]');
+      var elId = block.getAttribute('data-el-id') || (SG ? SG.uniqueId('el') : 'el-' + Date.now());
+      var elMount = block.querySelector('[data-hub-mount="el-' + elId + '"]');
       list.push({
-        id: block.getAttribute('data-el-id') || (SG ? SG.uniqueId('el') : 'el-' + Date.now()),
+        id: elId,
         title: val('title') || 'Элемент',
         description: val('description'),
         goal: val('goal'),
@@ -273,14 +334,20 @@
         errors: val('errors'),
         spotting: val('spotting'),
         videos: parseVideosFromEditor(videosEl ? videosEl.value : ''),
+        subSections:
+          elMount && window.WorkoutHubItemsEditor ? window.WorkoutHubItemsEditor.collectFromRoot(elMount) : [],
       });
     });
     return list;
   }
 
   function refreshDynamicElementsEditor(elements) {
+    syncNestedSubsFromDom();
     var root = $('#secElementsRoot');
-    if (root) root.innerHTML = renderDynamicElementsEditor(elements);
+    if (root) {
+      root.innerHTML = renderDynamicElementsEditor(elements);
+      mountNestedSubsInScope(root);
+    }
   }
 
   function bindDynamicElementsEditorEvents(force) {
@@ -334,6 +401,7 @@
               '<label class="admin-field">Ошибки<textarea data-f="errors" rows="2">' +
               escapeHtml(ex.errors) +
               '</textarea></label>' +
+              nestedSubsForEntity(ex, 'ex') +
               '</div>'
             );
           })
@@ -374,13 +442,17 @@
           var el = exBlock.querySelector('[data-f="' + name + '"]');
           return el ? el.value.trim() : '';
         }
+        var exId = exBlock.getAttribute('data-ex-id') || (SG ? SG.uniqueId('ex') : 'ex-' + Date.now());
+        var exMount = exBlock.querySelector('[data-hub-mount="ex-' + exId + '"]');
         g.exercises.push({
-          id: exBlock.getAttribute('data-ex-id') || (SG ? SG.uniqueId('ex') : 'ex-' + Date.now()),
+          id: exId,
           title: val('title') || 'Упражнение',
           description: val('description'),
           goal: val('goal'),
           principle: val('principle'),
           errors: val('errors'),
+          subSections:
+            exMount && window.WorkoutHubItemsEditor ? window.WorkoutHubItemsEditor.collectFromRoot(exMount) : [],
         });
       });
       groups.push(g);
@@ -389,8 +461,12 @@
   }
 
   function refreshGroupsEditor(groups) {
+    syncNestedSubsFromDom();
     var root = $('#secGroupsRoot');
-    if (root) root.innerHTML = renderGroupsEditor(groups);
+    if (root) {
+      root.innerHTML = renderGroupsEditor(groups);
+      mountNestedSubsInScope(root);
+    }
   }
 
   function bindGroupsEditorEvents(force) {
@@ -491,6 +567,8 @@
     var html = field('Фото (путь, или ссылка Google Drive «Поделиться»)', 'secPhoto', item.photo || '', 0);
     var usesGroups = window.SectionsGroups && window.SectionsGroups.templateUsesMuscleGroups(tpl);
 
+    html += subSectionsEditorSection();
+
     if (window.SectionsGroups) window.SectionsGroups.ensureContentBlocks(item);
     html += contentBlocksEditorSection(item.contentBlocks);
 
@@ -517,8 +595,11 @@
       html += field('Описание', 'secDescription', item.description || '', 5);
     }
 
+    nestedSubsStore = {};
     host.innerHTML = html;
+    mountSectionHubEditor(item);
     setupContentBlocksEditor(item);
+    mountNestedSubsInScope(host);
     if (tpl === 'dynamic-level') {
       var elementsRoot = $('#secElementsRoot');
       if (elementsRoot) elementsRoot.dataset.bound = '';
@@ -568,6 +649,7 @@
   }
 
   function collectSectionEditorData() {
+    syncNestedSubsFromDom();
     var found = SS.findItem(editingSectionId, editingItemId);
     if (!found) return null;
     var item = JSON.parse(JSON.stringify(found.item));
@@ -575,6 +657,8 @@
 
     var photoEl = $('#secPhoto');
     if (photoEl) item.photo = photoEl.value.trim();
+    item.subSections = sectionHubEditor ? sectionHubEditor.collect() : [];
+    if (window.WorkoutHubItemsEditor) window.WorkoutHubItemsEditor.syncItemsAlias(item);
     item.contentBlocks = collectContentBlocksFromDom($('#secContentBlocksRoot'));
     delete item.preparatoryExercises;
     delete item.errors;

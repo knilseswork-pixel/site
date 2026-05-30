@@ -25,6 +25,7 @@
   const CATEGORIES = ['Методика', 'Разминка', 'Соревнования', 'Клиенты', 'Первая помощь'];
 
 let editingId = null;
+let materialHubEditor = null;
 
 function notifyContentUpdated() {
   window.dispatchEvent(new CustomEvent('content-updated'));
@@ -108,93 +109,12 @@ function hideEditor() {
   $('#adminEditor')?.classList.add('hidden');
 }
 
-function renderHubItemsEditor(items) {
-  return (items || [])
-    .map(function (item) {
-      return (
-        '<div class="admin-hub-item" data-hub-id="' +
-        escapeHtml(item.id) +
-        '">' +
-        '<div class="admin-hub-item__head">' +
-        '<label class="admin-field admin-field--grow">Подраздел<input type="text" class="hub-item-title" value="' +
-        escapeHtml(item.title) +
-        '"></label>' +
-        '<button type="button" class="admin-btn admin-btn--sm admin-btn--danger hub-item-del">Удалить</button>' +
-        '</div>' +
-        '<label>Текст <span class="label-hint">абзацы через пустую строку</span>' +
-        '<textarea class="hub-item-body" rows="5">' +
-        escapeHtml((item.body || []).join('\n\n')) +
-        '</textarea></label>' +
-        '<label>Видео <span class="label-hint">Название | ссылка VK / Drive</span>' +
-        '<textarea class="hub-item-videos" rows="2">' +
-        escapeHtml(formatVideosForEditor(item.videos || [])) +
-        '</textarea></label>' +
-        '</div>'
-      );
-    })
-    .join('');
-}
-
-function collectHubItemsFromDom() {
-  var hubBox = $('#editorHubItems');
-  if (!hubBox) return [];
-  var items = [];
-  hubBox.querySelectorAll('.admin-hub-item').forEach(function (el) {
-    var titleEl = el.querySelector('.hub-item-title');
-    var bodyEl = el.querySelector('.hub-item-body');
-    var videosEl = el.querySelector('.hub-item-videos');
-    items.push({
-      id: el.getAttribute('data-hub-id') || 'hub-' + Date.now(),
-      title: titleEl ? titleEl.value.trim() || 'Подраздел' : 'Подраздел',
-      body: (bodyEl ? bodyEl.value : '')
-        .split(/\n\n+/)
-        .map(function (p) {
-          return p.trim();
-        })
-        .filter(Boolean),
-      videos: parseVideosFromEditor(videosEl ? videosEl.value : ''),
-    });
-  });
-  return items;
-}
-
-function refreshHubEditor(items) {
-  var hubBox = $('#editorHubItems');
-  if (!hubBox) return;
-  hubBox.innerHTML =
-    renderHubItemsEditor(items) +
-    '<p><button type="button" class="admin-btn admin-btn--sm" id="hubAddItem">+ Добавить подраздел</button></p>';
-  hubBox.dataset.bound = '';
-  bindHubItemsEditorEvents();
-  var addHubBtn = $('#hubAddItem');
-  if (addHubBtn) {
-    addHubBtn.addEventListener('click', function () {
-      var next = collectHubItemsFromDom();
-      next.push({
-        id: 'hub-' + Date.now(),
-        title: 'Новый подраздел',
-        body: [],
-        videos: [],
-      });
-      refreshHubEditor(next);
-    });
-  }
-}
-
-function bindHubItemsEditorEvents() {
-  var hubBox = $('#editorHubItems');
-  if (!hubBox || hubBox.dataset.bound === '1') return;
-  hubBox.dataset.bound = '1';
-
-  hubBox.addEventListener('click', function (e) {
-    if (!e.target.classList.contains('hub-item-del')) return;
-    var row = e.target.closest('.admin-hub-item');
-    if (!row) return;
-    var items = collectHubItemsFromDom().filter(function (it) {
-      return it.id !== row.getAttribute('data-hub-id');
-    });
-    refreshHubEditor(items);
-  });
+function mountMaterialHubEditor(items) {
+  if (!window.WorkoutHubItemsEditor) return null;
+  var root = $('#editorHubItems');
+  if (root) root.dataset.hubBound = '';
+  materialHubEditor = window.WorkoutHubItemsEditor.mount(root, items || []);
+  return materialHubEditor;
 }
 
 function openEditor(id = null) {
@@ -204,7 +124,9 @@ function openEditor(id = null) {
 
   const data = getContentData();
   const article = id ? data.articles.find((a) => a.id === id) : null;
-  const isHub = article?.type === 'hub';
+  const hubItems = window.WorkoutHubItemsEditor
+    ? window.WorkoutHubItemsEditor.getList(article || {})
+    : article?.items || article?.subSections || [];
 
   $('#editorTitle').value = article?.title || '';
   $('#editorExcerpt').value = article?.excerpt || '';
@@ -214,54 +136,14 @@ function openEditor(id = null) {
   }
   $('#editorCategory').value = article?.category || 'Методика';
   $('#editorBody').value = (article?.body || []).join('\n\n');
-  $('#editorVideos').value = formatVideosForEditor(article?.videos || []);
+  $('#editorVideos').value = window.WorkoutHubItemsEditor
+    ? window.WorkoutHubItemsEditor.formatVideosForEditor(article?.videos || [])
+    : '';
 
-  const hubBox = $('#editorHubItems');
-  const bodyWrap = $('#editorBodyWrap');
-  const videosWrap = $('#editorVideos')?.closest('label');
-  if (isHub && hubBox) {
-    bodyWrap?.classList.add('hidden');
-    videosWrap?.classList.add('hidden');
-    hubBox.classList.remove('hidden');
-    refreshHubEditor(article?.items || []);
-  } else {
-    bodyWrap?.classList.remove('hidden');
-    videosWrap?.classList.remove('hidden');
-    hubBox?.classList.add('hidden');
-    if (hubBox) hubBox.innerHTML = '';
-  }
-}
-
-function formatVideosForEditor(videos) {
-  return videos
-    .map((v) => {
-      const url = v.embed || v.src || '';
-      return `${v.title || 'Видео'} | ${url}`;
-    })
-    .join('\n');
-}
-
-function parseVideosFromEditor(text) {
-  const lines = text.split('\n').map((l) => l.trim()).filter(Boolean);
-  return lines.map((line, i) => {
-    let title = `Видео ${i + 1}`;
-    let url = line;
-    if (line.includes('|')) {
-      const [t, u] = line.split('|').map((s) => s.trim());
-      title = t || title;
-      url = u;
-    }
-    const iframe = url.match(/src=["']([^"']+)["']/i);
-    if (iframe) url = iframe[1];
-    if (window.WorkoutMedia && window.WorkoutMedia.isDriveUrl(url)) {
-      const norm = window.WorkoutMedia.normalizeVideo(url);
-      if (norm.type === 'embed') return { title, embed: norm.url };
-    }
-    if (url.includes('vk.com') || url.includes('youtube') || url.includes('youtu.be')) {
-      return { title, embed: url };
-    }
-    return { title, src: url };
-  });
+  const hasHub = hubItems.length > 0;
+  $('#editorBodyWrap')?.classList.toggle('hidden', hasHub);
+  $('#editorVideos')?.closest('label')?.classList.toggle('hidden', hasHub);
+  mountMaterialHubEditor(hubItems);
 }
 
 function collectEditorData() {
@@ -272,38 +154,55 @@ function collectEditorData() {
   const data = getContentData();
   const existing = editingId ? data.articles.find((a) => a.id === editingId) : null;
 
-  if (existing?.type === 'hub') {
-    return {
+  const items = materialHubEditor ? materialHubEditor.collect() : [];
+
+  if (items.length > 0) {
+    const hub = {
       ...existing,
+      id: existing?.id || slugId(title) || 'article-' + Date.now(),
       title,
       excerpt,
       date,
       category,
-      items: collectHubItemsFromDom(),
+      type: 'hub',
+      subSections: items,
+      items: items,
+      body: [],
+      videos: [],
+      accent: existing?.accent || '#FF2D2D',
     };
+    if (window.WorkoutHubItemsEditor) window.WorkoutHubItemsEditor.syncItemsAlias(hub);
+    return hub;
   }
 
   const body = $('#editorBody').value
     .split(/\n\n+/)
     .map((p) => p.trim())
     .filter(Boolean);
-  const videos = parseVideosFromEditor($('#editorVideos').value);
+  const videos = window.WorkoutHubItemsEditor
+    ? window.WorkoutHubItemsEditor.parseVideosFromEditor($('#editorVideos').value)
+    : [];
 
   let id = editingId || slugId(title);
   if (!editingId && data.articles.some((a) => a.id === id)) {
     id = `${id}-${Date.now()}`;
   }
 
-  return {
+  const plain = {
+    ...existing,
     id,
     title,
     excerpt,
     date,
     category,
-    accent: '#FF2D2D',
+    accent: existing?.accent || '#FF2D2D',
     body,
     videos,
   };
+  delete plain.type;
+  delete plain.items;
+  delete plain.subSections;
+  return plain;
 }
 
 function saveArticle() {
