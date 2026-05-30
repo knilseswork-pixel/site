@@ -416,6 +416,19 @@
     );
   }
 
+  function renderContentBlocks(item) {
+    if (!item || !window.SectionsGroups) return '';
+    window.SectionsGroups.ensureContentBlocks(item);
+    return (item.contentBlocks || [])
+      .filter(function (b) {
+        return hasContent(b.body) || hasContent(b.title);
+      })
+      .map(function (b) {
+        return block(b.title || 'Блок', '<p>' + textToHtml(b.body || '') + '</p>');
+      })
+      .join('');
+  }
+
   function openSectionItem(sectionId, itemId) {
     var found = SS.findItem(sectionId, itemId);
     if (!found) return;
@@ -439,6 +452,7 @@
       if (hasContent(item.description)) {
         html += block('Описание уровня', '<p>' + textToHtml(item.description) + '</p>');
       }
+      html += renderContentBlocks(item);
       if (hasContent(item.spotting)) {
         html += block('Страховка (общая для уровня)', '<p>' + textToHtml(item.spotting) + '</p>');
       }
@@ -448,15 +462,13 @@
       if (hasContent(item.description)) {
         html += block('Описание уровня', '<p>' + textToHtml(item.description) + '</p>');
       }
-      if (hasContent(item.preparatoryExercises)) {
-        html += block('Подводящие упражнения', '<p>' + textToHtml(item.preparatoryExercises) + '</p>');
-      }
-      if (hasContent(item.errors) && tpl === 'static-level') {
-        html += block('Ошибки (общие)', '<p>' + textToHtml(item.errors) + '</p>');
-      }
+      html += renderContentBlocks(item);
       html += renderGppExerciseLevel(item, tpl);
     } else if (tpl === 'simple-block') {
-      html += block('Описание', '<p>' + textToHtml(item.description) + '</p>');
+      if (hasContent(item.description)) {
+        html += block('Описание', '<p>' + textToHtml(item.description) + '</p>');
+      }
+      html += renderContentBlocks(item);
     }
 
     $('#detailContent').innerHTML = html || '<p class="prose">Контент пока не заполнен. Используйте админ-панель.</p>';

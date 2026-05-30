@@ -1798,9 +1798,40 @@ body.media-lightbox-open {
   border-radius: var(--radius-sm);
 }
 
-.admin-hub-item h4 {
-  margin: 0 0 12px;
-  font-size: 0.9375rem;
+.admin-hub-item__head,
+.builder-hub-item__head,
+.admin-content-block__head {
+  display: flex;
+  gap: 10px;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+
+.admin-subsection {
+  margin: 20px 0;
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+}
+
+.admin-subsection__title {
+  margin: 0 0 8px;
+  font-size: 1rem;
+}
+
+.admin-content-block {
+  margin-bottom: 16px;
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.builder-hub-item {
+  margin-bottom: 12px;
+  padding: 12px;
+  border: 1px dashed var(--border);
+  border-radius: var(--radius-sm);
 }
 
 .hub-materials-ui .hub-topics {

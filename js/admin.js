@@ -108,6 +108,95 @@ function hideEditor() {
   $('#adminEditor')?.classList.add('hidden');
 }
 
+function renderHubItemsEditor(items) {
+  return (items || [])
+    .map(function (item) {
+      return (
+        '<div class="admin-hub-item" data-hub-id="' +
+        escapeHtml(item.id) +
+        '">' +
+        '<div class="admin-hub-item__head">' +
+        '<label class="admin-field admin-field--grow">Подраздел<input type="text" class="hub-item-title" value="' +
+        escapeHtml(item.title) +
+        '"></label>' +
+        '<button type="button" class="admin-btn admin-btn--sm admin-btn--danger hub-item-del">Удалить</button>' +
+        '</div>' +
+        '<label>Текст <span class="label-hint">абзацы через пустую строку</span>' +
+        '<textarea class="hub-item-body" rows="5">' +
+        escapeHtml((item.body || []).join('\n\n')) +
+        '</textarea></label>' +
+        '<label>Видео <span class="label-hint">Название | ссылка VK / Drive</span>' +
+        '<textarea class="hub-item-videos" rows="2">' +
+        escapeHtml(formatVideosForEditor(item.videos || [])) +
+        '</textarea></label>' +
+        '</div>'
+      );
+    })
+    .join('');
+}
+
+function collectHubItemsFromDom() {
+  var hubBox = $('#editorHubItems');
+  if (!hubBox) return [];
+  var items = [];
+  hubBox.querySelectorAll('.admin-hub-item').forEach(function (el) {
+    var titleEl = el.querySelector('.hub-item-title');
+    var bodyEl = el.querySelector('.hub-item-body');
+    var videosEl = el.querySelector('.hub-item-videos');
+    items.push({
+      id: el.getAttribute('data-hub-id') || 'hub-' + Date.now(),
+      title: titleEl ? titleEl.value.trim() || 'Подраздел' : 'Подраздел',
+      body: (bodyEl ? bodyEl.value : '')
+        .split(/\n\n+/)
+        .map(function (p) {
+          return p.trim();
+        })
+        .filter(Boolean),
+      videos: parseVideosFromEditor(videosEl ? videosEl.value : ''),
+    });
+  });
+  return items;
+}
+
+function refreshHubEditor(items) {
+  var hubBox = $('#editorHubItems');
+  if (!hubBox) return;
+  hubBox.innerHTML =
+    renderHubItemsEditor(items) +
+    '<p><button type="button" class="admin-btn admin-btn--sm" id="hubAddItem">+ Добавить подраздел</button></p>';
+  hubBox.dataset.bound = '';
+  bindHubItemsEditorEvents();
+  var addHubBtn = $('#hubAddItem');
+  if (addHubBtn) {
+    addHubBtn.addEventListener('click', function () {
+      var next = collectHubItemsFromDom();
+      next.push({
+        id: 'hub-' + Date.now(),
+        title: 'Новый подраздел',
+        body: [],
+        videos: [],
+      });
+      refreshHubEditor(next);
+    });
+  }
+}
+
+function bindHubItemsEditorEvents() {
+  var hubBox = $('#editorHubItems');
+  if (!hubBox || hubBox.dataset.bound === '1') return;
+  hubBox.dataset.bound = '1';
+
+  hubBox.addEventListener('click', function (e) {
+    if (!e.target.classList.contains('hub-item-del')) return;
+    var row = e.target.closest('.admin-hub-item');
+    if (!row) return;
+    var items = collectHubItemsFromDom().filter(function (it) {
+      return it.id !== row.getAttribute('data-hub-id');
+    });
+    refreshHubEditor(items);
+  });
+}
+
 function openEditor(id = null) {
   editingId = id;
   const editor = $('#adminEditor');
@@ -115,7 +204,7 @@ function openEditor(id = null) {
 
   const data = getContentData();
   const article = id ? data.articles.find((a) => a.id === id) : null;
-  const isHub = article?.type === 'hub' && article?.items?.length;
+  const isHub = article?.type === 'hub';
 
   $('#editorTitle').value = article?.title || '';
   $('#editorExcerpt').value = article?.excerpt || '';
@@ -134,20 +223,7 @@ function openEditor(id = null) {
     bodyWrap?.classList.add('hidden');
     videosWrap?.classList.add('hidden');
     hubBox.classList.remove('hidden');
-    hubBox.innerHTML = (article.items || [])
-      .map(
-        (item, i) => `
-      <div class="admin-hub-item">
-        <h4>${escapeHtml(item.title)}</h4>
-        <label>Текст <span class="label-hint">абзацы через пустую строку</span>
-          <textarea id="hubItem${i}Body" rows="5">${escapeHtml((item.body || []).join('\n\n'))}</textarea>
-        </label>
-        <label>Видео VK <span class="label-hint">Название | ссылка</span>
-          <textarea id="hubItem${i}Videos" rows="2">${escapeHtml(formatVideosForEditor(item.videos || []))}</textarea>
-        </label>
-      </div>`
-      )
-      .join('');
+    refreshHubEditor(article?.items || []);
   } else {
     bodyWrap?.classList.remove('hidden');
     videosWrap?.classList.remove('hidden');
@@ -196,26 +272,14 @@ function collectEditorData() {
   const data = getContentData();
   const existing = editingId ? data.articles.find((a) => a.id === editingId) : null;
 
-  if (existing?.type === 'hub' && existing.items) {
-    const items = existing.items.map((item, i) => {
-      const bodyEl = $(`#hubItem${i}Body`);
-      const videosEl = $(`#hubItem${i}Videos`);
-      return {
-        ...item,
-        body: (bodyEl?.value || '')
-          .split(/\n\n+/)
-          .map((p) => p.trim())
-          .filter(Boolean),
-        videos: parseVideosFromEditor(videosEl?.value || ''),
-      };
-    });
+  if (existing?.type === 'hub') {
     return {
       ...existing,
       title,
       excerpt,
       date,
       category,
-      items,
+      items: collectHubItemsFromDom(),
     };
   }
 

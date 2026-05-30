@@ -37,6 +37,42 @@
     return SC.getSiteConfig() || { version: 1, site: {}, mainTabs: [], materialFilters: [], customPages: [] };
   }
 
+  function formatVideosForEditor(videos) {
+    return (videos || [])
+      .map(function (v) {
+        return (v.title || 'Видео') + ' | ' + (v.embed || v.src || '');
+      })
+      .join('\n');
+  }
+
+  function parseVideosFromEditor(text) {
+    var lines = String(text || '')
+      .split('\n')
+      .map(function (l) {
+        return l.trim();
+      })
+      .filter(Boolean);
+    return lines.map(function (line, i) {
+      var title = 'Видео ' + (i + 1);
+      var url = line;
+      if (line.indexOf('|') !== -1) {
+        var parts = line.split('|');
+        title = parts[0].trim() || title;
+        url = parts.slice(1).join('|').trim();
+      }
+      var iframe = url.match(/src=["']([^"']+)["']/i);
+      if (iframe) url = iframe[1];
+      if (window.WorkoutMedia && window.WorkoutMedia.isDriveUrl(url)) {
+        var norm = window.WorkoutMedia.normalizeVideo(url);
+        if (norm.type === 'embed') return { title: title, embed: norm.url };
+      }
+      if (/vk\.com|youtube|youtu\.be/i.test(url)) {
+        return { title: title, embed: url };
+      }
+      return { title: title, src: url };
+    });
+  }
+
   function renderBuilder() {
     var host = $('#siteBuilderRoot');
     if (!host) return;
@@ -188,8 +224,9 @@
                 '" data-block="' +
                 bi +
                 '">' +
-                '<strong>Текст:</strong> ' +
-                escapeHtml(block.title) +
+                '<label class="admin-field">Текстовый блок<input type="text" class="builder-block-title" value="' +
+                escapeHtml(block.title || 'Текст') +
+                '"></label>' +
                 '<textarea class="builder-block-text" rows="3">' +
                 escapeHtml((block.body || []).join('\n\n')) +
                 '</textarea>' +
@@ -200,13 +237,22 @@
               var items = (block.items || [])
                 .map(function (it, ii) {
                   return (
-                    '<div class="builder-hub-item">' +
+                    '<div class="builder-hub-item" data-item-id="' +
+                    escapeHtml(it.id || 'item-' + ii) +
+                    '">' +
+                    '<div class="builder-hub-item__head">' +
                     '<input type="text" class="builder-item-title" value="' +
                     escapeHtml(it.title) +
                     '" placeholder="Название пункта">' +
+                    '<button type="button" class="admin-btn admin-btn--sm admin-btn--danger builder-del-hub-item">×</button>' +
+                    '</div>' +
                     '<textarea class="builder-item-body" rows="2" placeholder="Текст">' +
                     escapeHtml((it.body || []).join('\n\n')) +
-                    '</textarea></div>'
+                    '</textarea>' +
+                    '<label class="admin-field">Видео <span class="label-hint">Название | ссылка</span>' +
+                    '<textarea class="builder-item-videos" rows="2">' +
+                    escapeHtml(formatVideosForEditor(it.videos || [])) +
+                    '</textarea></label></div>'
                   );
                 })
                 .join('');
@@ -216,12 +262,13 @@
                 '" data-block="' +
                 bi +
                 '">' +
-                '<strong>Блок с кнопками:</strong> ' +
-                escapeHtml(block.title) +
+                '<label class="admin-field">Блок с кнопками<input type="text" class="builder-block-title" value="' +
+                escapeHtml(block.title || 'Раздел') +
+                '"></label>' +
                 '<div class="builder-hub-items">' +
                 items +
                 '</div>' +
-                '<button type="button" class="admin-btn admin-btn--sm builder-add-hub-item">+ Пункт</button> ' +
+                '<button type="button" class="admin-btn admin-btn--sm builder-add-hub-item">+ Подраздел</button> ' +
                 '<button type="button" class="admin-btn admin-btn--sm admin-btn--danger builder-del-block">Удалить блок</button></div>'
               );
             }
@@ -295,8 +342,8 @@
         pages[pi].intro = pageEl.querySelector('.builder-page-intro').value.trim();
         var blocks = [];
         pageEl.querySelectorAll('.builder-block').forEach(function (blockEl) {
-          var titleEl = blockEl.querySelector('strong');
-          var titleText = titleEl ? titleEl.textContent.replace(/^(Текст:|Блок с кнопками:)\s*/, '').trim() : 'Блок';
+          var titleInput = blockEl.querySelector('.builder-block-title');
+          var titleText = titleInput ? titleInput.value.trim() : 'Блок';
           if (blockEl.querySelector('.builder-block-text')) {
             blocks.push({
               type: 'text',
@@ -312,8 +359,9 @@
           } else if (blockEl.querySelector('.builder-hub-items')) {
             var items = [];
             blockEl.querySelectorAll('.builder-hub-item').forEach(function (itemEl, ii) {
+              var videosEl = itemEl.querySelector('.builder-item-videos');
               items.push({
-                id: 'item-' + ii,
+                id: itemEl.getAttribute('data-item-id') || 'item-' + Date.now(),
                 title: itemEl.querySelector('.builder-item-title').value.trim() || 'Пункт',
                 body: itemEl
                   .querySelector('.builder-item-body')
@@ -322,7 +370,7 @@
                     return p.trim();
                   })
                   .filter(Boolean),
-                videos: [],
+                videos: parseVideosFromEditor(videosEl ? videosEl.value : ''),
               });
             });
             blocks.push({ type: 'hub', title: titleText, items: items });
@@ -424,9 +472,23 @@
       }
       if (e.target.classList.contains('builder-add-hub-item') && blockEl) {
         var bi2 = parseInt(blockEl.dataset.block, 10);
-        cfg.customPages[pi].blocks[bi2].items.push({ id: 'item-' + Date.now(), title: 'Новый пункт', body: [], videos: [] });
+        cfg.customPages[pi].blocks[bi2].items.push({ id: 'item-' + Date.now(), title: 'Новый подраздел', body: [], videos: [] });
         SC.saveSiteConfigLocal(cfg);
         renderBuilder();
+        return;
+      }
+      if (e.target.classList.contains('builder-del-hub-item') && blockEl) {
+        var bi3 = parseInt(blockEl.dataset.block, 10);
+        var itemEl = e.target.closest('.builder-hub-item');
+        var itemId = itemEl && itemEl.getAttribute('data-item-id');
+        if (itemId && cfg.customPages[pi].blocks[bi3]) {
+          cfg.customPages[pi].blocks[bi3].items = cfg.customPages[pi].blocks[bi3].items.filter(function (it) {
+            return it.id !== itemId;
+          });
+          SC.saveSiteConfigLocal(cfg);
+          renderBuilder();
+        }
+        return;
       }
     });
 

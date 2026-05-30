@@ -115,6 +115,106 @@
     if (ed) ed.classList.add('hidden');
   }
 
+  function renderContentBlockEditor(block) {
+    return (
+      '<div class="admin-content-block" data-cb-id="' +
+      escapeHtml(block.id) +
+      '">' +
+      '<div class="admin-content-block__head">' +
+      '<label class="admin-field admin-field--grow">Заголовок блока<input type="text" data-f="title" value="' +
+      escapeHtml(block.title) +
+      '"></label>' +
+      '<button type="button" class="admin-btn admin-btn--sm admin-btn--danger" data-action="del-content-block">Удалить</button>' +
+      '</div>' +
+      '<label class="admin-field">Текст<textarea data-f="body" rows="4">' +
+      escapeHtml(block.body || '') +
+      '</textarea></label>' +
+      '</div>'
+    );
+  }
+
+  function renderContentBlocksEditor(blocks) {
+    return (blocks || []).map(renderContentBlockEditor).join('');
+  }
+
+  function collectContentBlocksFromDom(root) {
+    if (!root) return [];
+    var SG = window.SectionsGroups;
+    var list = [];
+    root.querySelectorAll('.admin-content-block').forEach(function (el) {
+      function val(name) {
+        var f = el.querySelector('[data-f="' + name + '"]');
+        return f ? f.value.trim() : '';
+      }
+      list.push({
+        id: el.getAttribute('data-cb-id') || (SG ? SG.uniqueId('cb') : 'cb-' + Date.now()),
+        title: val('title') || 'Блок',
+        body: val('body'),
+      });
+    });
+    return list;
+  }
+
+  function refreshContentBlocksEditor(blocks) {
+    var root = $('#secContentBlocksRoot');
+    if (root) root.innerHTML = renderContentBlocksEditor(blocks);
+  }
+
+  function bindContentBlocksEditorEvents(force) {
+    var root = $('#secContentBlocksRoot');
+    if (!root || (!force && root.dataset.bound === '1')) return;
+    root.dataset.bound = '1';
+
+    root.addEventListener('click', function (e) {
+      var btn = e.target.closest('[data-action="del-content-block"]');
+      if (!btn || !root.contains(btn)) return;
+      var blockEl = btn.closest('.admin-content-block');
+      var cbId = blockEl && blockEl.getAttribute('data-cb-id');
+      var blocks = collectContentBlocksFromDom(root).filter(function (b) {
+        return b.id !== cbId;
+      });
+      refreshContentBlocksEditor(blocks);
+    });
+  }
+
+  function contentBlocksEditorSection(blocks) {
+    return (
+      '<section class="admin-subsection">' +
+      '<h4 class="admin-subsection__title">Текстовые блоки</h4>' +
+      '<p class="admin-help">Дополнительные подблоки на странице уровня: описание, подводящие, ошибки и любые свои разделы.</p>' +
+      '<div id="secContentBlocksRoot" class="sec-content-blocks-root">' +
+      renderContentBlocksEditor(blocks) +
+      '</div>' +
+      '<p><button type="button" class="admin-btn admin-btn--sm" id="secAddContentBlock">+ Добавить текстовый блок</button></p>' +
+      '</section>'
+    );
+  }
+
+  function bindAddContentBlockButton() {
+    var addBtn = $('#secAddContentBlock');
+    if (!addBtn) return;
+    addBtn.onclick = function () {
+      var root = $('#secContentBlocksRoot');
+      if (!root) return;
+      var blocks = collectContentBlocksFromDom(root);
+      var SG = window.SectionsGroups;
+      blocks.push({
+        id: SG ? SG.uniqueId('cb') : 'cb-' + Date.now(),
+        title: 'Новый блок',
+        body: '',
+      });
+      refreshContentBlocksEditor(blocks);
+    };
+  }
+
+  function setupContentBlocksEditor(item) {
+    if (window.SectionsGroups) window.SectionsGroups.ensureContentBlocks(item);
+    var blocksRoot = $('#secContentBlocksRoot');
+    if (blocksRoot) blocksRoot.dataset.bound = '';
+    bindContentBlocksEditorEvents(true);
+    bindAddContentBlockButton();
+  }
+
   function renderDynamicElementBlock(ex) {
     return (
       '<div class="admin-exercise-block" data-el-id="' +
@@ -391,6 +491,9 @@
     var html = field('Фото (путь, или ссылка Google Drive «Поделиться»)', 'secPhoto', item.photo || '', 0);
     var usesGroups = window.SectionsGroups && window.SectionsGroups.templateUsesMuscleGroups(tpl);
 
+    if (window.SectionsGroups) window.SectionsGroups.ensureContentBlocks(item);
+    html += contentBlocksEditorSection(item.contentBlocks);
+
     if (tpl === 'dynamic-level') {
       window.SectionsGroups.ensureDynamicElements(item);
       html += field('Краткое описание уровня (необязательно)', 'secDescription', item.description || '', 3);
@@ -415,6 +518,7 @@
     }
 
     host.innerHTML = html;
+    setupContentBlocksEditor(item);
     if (tpl === 'dynamic-level') {
       var elementsRoot = $('#secElementsRoot');
       if (elementsRoot) elementsRoot.dataset.bound = '';
@@ -471,6 +575,9 @@
 
     var photoEl = $('#secPhoto');
     if (photoEl) item.photo = photoEl.value.trim();
+    item.contentBlocks = collectContentBlocksFromDom($('#secContentBlocksRoot'));
+    delete item.preparatoryExercises;
+    delete item.errors;
 
     if (tpl === 'dynamic-level') {
       item.description = ($('#secDescription') || {}).value || '';
@@ -478,12 +585,9 @@
       item.elements = collectDynamicElementsFromDom($('#secElementsRoot'));
       delete item.groups;
       delete item.videos;
-      delete item.preparatoryExercises;
-      delete item.errors;
     } else if (window.SectionsGroups && window.SectionsGroups.templateUsesMuscleGroups(tpl)) {
       item.description = ($('#secDescription') || {}).value || '';
       item.groups = collectGroupsFromDom($('#secGroupsRoot'));
-      delete item.preparatoryExercises;
       delete item.videos;
       delete item.elements;
     } else if (tpl === 'simple-block') {

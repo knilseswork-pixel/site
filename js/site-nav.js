@@ -132,7 +132,10 @@
             '</h3>' +
             (item.body || []).map(function (p) {
               return '<p>' + textToHtml(p) + '</p>';
-            }).join('');
+            }).join('') +
+            (item.videos && item.videos.length && window.renderVideoBlock
+              ? item.videos.map(window.renderVideoBlock).join('')
+              : '');
           detail.querySelector('.custom-hub-back').addEventListener('click', function () {
             detail.classList.add('hidden');
             detail.innerHTML = '';

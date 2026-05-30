@@ -109,6 +109,42 @@
     return item;
   }
 
+  function ensureContentBlocks(item) {
+    if (!Array.isArray(item.contentBlocks)) item.contentBlocks = [];
+    if (item.preparatoryExercises && String(item.preparatoryExercises).trim()) {
+      var hasPrep = item.contentBlocks.some(function (b) {
+        return /подвод/i.test(b.title || '');
+      });
+      if (!hasPrep) {
+        item.contentBlocks.push({
+          id: uniqueId('cb'),
+          title: 'Подводящие упражнения',
+          body: String(item.preparatoryExercises).trim(),
+        });
+      }
+    }
+    if (item.errors && String(item.errors).trim()) {
+      var hasErr = item.contentBlocks.some(function (b) {
+        return /ошиб/i.test(b.title || '');
+      });
+      if (!hasErr) {
+        item.contentBlocks.push({
+          id: uniqueId('cb'),
+          title: 'Ошибки (общие)',
+          body: String(item.errors).trim(),
+        });
+      }
+    }
+    item.contentBlocks = item.contentBlocks.map(function (b) {
+      return {
+        id: b.id || uniqueId('cb'),
+        title: b.title || 'Блок',
+        body: b.body != null ? String(b.body) : '',
+      };
+    });
+    return item;
+  }
+
   function migrateSectionsData(data) {
     if (!data || !data.sections) return data;
     data.sections.forEach(function (sec) {
@@ -121,6 +157,7 @@
         } else if (templateUsesMuscleGroups(sec.template)) {
           ensureItemMuscleGroups(item);
         }
+        ensureContentBlocks(item);
       });
     });
     return data;
@@ -133,6 +170,7 @@
     templateIsDynamic: templateIsDynamic,
     ensureDynamicElements: ensureDynamicElements,
     ensureItemMuscleGroups: ensureItemMuscleGroups,
+    ensureContentBlocks: ensureContentBlocks,
     migrateSectionsData: migrateSectionsData,
     slugId: slugId,
     uniqueId: uniqueId,
