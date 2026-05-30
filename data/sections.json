@@ -9,25 +9,53 @@
           "id": "prep",
           "title": "Подготовительный уровень",
           "photo": "",
-          "description": "",
-          "preparatoryExercises": "",
-          "errors": ""
+          "description": "В этом уровне размещаются не сами элементы, а фундаментальные упражнения изометрической нагрузки ",
+          "errors": "",
+          "groups": [
+            {
+              "id": "core",
+              "label": "Обязательные упражнения для подготовки к статическим элементам",
+              "exercises": []
+            }
+          ]
         },
         {
           "id": "beginner",
           "title": "Начальный уровень",
           "photo": "",
           "description": "",
-          "preparatoryExercises": "",
-          "errors": ""
+          "errors": "",
+          "groups": [
+            {
+              "id": "core",
+              "label": "Статические Элементы",
+              "exercises": []
+            },
+            {
+              "id": "group-mppkemx8qxpx",
+              "label": "Силовые Элементы",
+              "exercises": []
+            }
+          ]
         },
         {
           "id": "middle",
           "title": "Средний уровень",
           "photo": "",
           "description": "",
-          "preparatoryExercises": "",
-          "errors": ""
+          "errors": "",
+          "groups": [
+            {
+              "id": "pulling",
+              "label": "Статические Элементы",
+              "exercises": []
+            },
+            {
+              "id": "pushing",
+              "label": "Силовые Элементы",
+              "exercises": []
+            }
+          ]
         },
         {
           "id": "advanced",
@@ -35,15 +63,48 @@
           "photo": "",
           "description": "",
           "preparatoryExercises": "",
-          "errors": ""
+          "errors": "",
+          "groups": [
+            {
+              "id": "pulling",
+              "label": "Тянущие",
+              "exercises": []
+            },
+            {
+              "id": "pushing",
+              "label": "Толкающие",
+              "exercises": []
+            },
+            {
+              "id": "core",
+              "label": "Мышцы кора",
+              "exercises": []
+            }
+          ]
         },
         {
           "id": "combos",
           "title": "Комбинации",
           "photo": "",
           "description": "",
-          "preparatoryExercises": "",
-          "errors": ""
+          "errors": "",
+          "groups": [
+            {
+              "id": "pulling",
+              "label": "Начальный Уровень комбинаций",
+              "exercises": []
+            },
+            {
+              "id": "pushing",
+              "label": "Средний Уровень комбинаций",
+              "exercises": []
+            },
+            {
+              "id": "core",
+              "label": "Продвинутый Уровень комбинаций",
+              "exercises": []
+            }
+          ]
         }
       ]
     },
@@ -55,38 +116,38 @@
         {
           "id": "beginner",
           "title": "Начальный уровень",
-          "videos": [],
           "description": "",
           "preparatoryExercises": "",
           "errors": "",
-          "spotting": ""
+          "spotting": "",
+          "elements": []
         },
         {
           "id": "middle",
           "title": "Средний уровень",
-          "videos": [],
           "description": "",
           "preparatoryExercises": "",
           "errors": "",
-          "spotting": ""
+          "spotting": "",
+          "elements": []
         },
         {
           "id": "advanced",
           "title": "Продвинутый уровень",
-          "videos": [],
           "description": "",
           "preparatoryExercises": "",
           "errors": "",
-          "spotting": ""
+          "spotting": "",
+          "elements": []
         },
         {
           "id": "combos",
           "title": "Комбинации",
-          "videos": [],
           "description": "",
           "preparatoryExercises": "",
           "errors": "",
-          "spotting": ""
+          "spotting": "",
+          "elements": []
         }
       ]
     },
@@ -171,27 +232,63 @@
           "id": "beginner",
           "title": "Начальный уровень",
           "groups": [
-            { "id": "pulling", "label": "Тянущие", "photo": "", "description": "", "goal": "", "principle": "", "errors": "" },
-            { "id": "pushing", "label": "Толкающие", "photo": "", "description": "", "goal": "", "principle": "", "errors": "" },
-            { "id": "core", "label": "Мышцы кора", "photo": "", "description": "", "goal": "", "principle": "", "errors": "" }
+            {
+              "id": "pulling",
+              "label": "Тянущие",
+              "exercises": []
+            },
+            {
+              "id": "pushing",
+              "label": "Толкающие",
+              "exercises": []
+            },
+            {
+              "id": "core",
+              "label": "Мышцы кора",
+              "exercises": []
+            }
           ]
         },
         {
           "id": "middle",
           "title": "Средний уровень",
           "groups": [
-            { "id": "pulling", "label": "Тянущие", "photo": "", "description": "", "goal": "", "principle": "", "errors": "" },
-            { "id": "pushing", "label": "Толкающие", "photo": "", "description": "", "goal": "", "principle": "", "errors": "" },
-            { "id": "core", "label": "Мышцы кора", "photo": "", "description": "", "goal": "", "principle": "", "errors": "" }
+            {
+              "id": "pulling",
+              "label": "Тянущие",
+              "exercises": []
+            },
+            {
+              "id": "pushing",
+              "label": "Толкающие",
+              "exercises": []
+            },
+            {
+              "id": "core",
+              "label": "Мышцы кора",
+              "exercises": []
+            }
           ]
         },
         {
           "id": "advanced",
           "title": "Продвинутый уровень",
           "groups": [
-            { "id": "pulling", "label": "Тянущие", "photo": "", "description": "", "goal": "", "principle": "", "errors": "" },
-            { "id": "pushing", "label": "Толкающие", "photo": "", "description": "", "goal": "", "principle": "", "errors": "" },
-            { "id": "core", "label": "Мышцы кора", "photo": "", "description": "", "goal": "", "principle": "", "errors": "" }
+            {
+              "id": "pulling",
+              "label": "Тянущие",
+              "exercises": []
+            },
+            {
+              "id": "pushing",
+              "label": "Толкающие",
+              "exercises": []
+            },
+            {
+              "id": "core",
+              "label": "Мышцы кора",
+              "exercises": []
+            }
           ]
         }
       ]
@@ -205,27 +302,63 @@
           "id": "beginner",
           "title": "Начальный уровень",
           "groups": [
-            { "id": "pulling", "label": "Тянущие", "photo": "", "description": "", "goal": "" },
-            { "id": "pushing", "label": "Толкающие", "photo": "", "description": "", "goal": "" },
-            { "id": "core", "label": "Мышцы кора", "photo": "", "description": "", "goal": "" }
+            {
+              "id": "pulling",
+              "label": "Тянущие",
+              "exercises": []
+            },
+            {
+              "id": "pushing",
+              "label": "Толкающие",
+              "exercises": []
+            },
+            {
+              "id": "core",
+              "label": "Мышцы кора",
+              "exercises": []
+            }
           ]
         },
         {
           "id": "middle",
           "title": "Средний уровень",
           "groups": [
-            { "id": "pulling", "label": "Тянущие", "photo": "", "description": "", "goal": "" },
-            { "id": "pushing", "label": "Толкающие", "photo": "", "description": "", "goal": "" },
-            { "id": "core", "label": "Мышцы кора", "photo": "", "description": "", "goal": "" }
+            {
+              "id": "pulling",
+              "label": "Тянущие",
+              "exercises": []
+            },
+            {
+              "id": "pushing",
+              "label": "Толкающие",
+              "exercises": []
+            },
+            {
+              "id": "core",
+              "label": "Мышцы кора",
+              "exercises": []
+            }
           ]
         },
         {
           "id": "advanced",
           "title": "Продвинутый уровень",
           "groups": [
-            { "id": "pulling", "label": "Тянущие", "photo": "", "description": "", "goal": "" },
-            { "id": "pushing", "label": "Толкающие", "photo": "", "description": "", "goal": "" },
-            { "id": "core", "label": "Мышцы кора", "photo": "", "description": "", "goal": "" }
+            {
+              "id": "pulling",
+              "label": "Тянущие",
+              "exercises": []
+            },
+            {
+              "id": "pushing",
+              "label": "Толкающие",
+              "exercises": []
+            },
+            {
+              "id": "core",
+              "label": "Мышцы кора",
+              "exercises": []
+            }
           ]
         }
       ]
